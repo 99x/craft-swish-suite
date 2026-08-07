@@ -1,0 +1,41 @@
+# Dependencies
+/vendor
+
+# Certificates — NEVER commit private keys or certificates
+*.p12
+*.pfx
+*.pem
+*.crt
+*.cer
+*.key
+
+# Environment
+.env
+.env.local
+*.local
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache/
+/coverage/
+/build/
+
+# PHPStan
+.phpstan-cache/
+
+# Easy Coding Standards
+.ecs_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude / Codex
+.claude
+.codex

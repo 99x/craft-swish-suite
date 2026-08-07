@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay with Swish</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff8f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1a1a1a;
+        }
+
+        .pay-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 32px rgba(0, 0, 0, .1);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            max-width: 380px;
+            width: calc(100% - 2rem);
+        }
+
+        .pay-logo {
+            width: 72px;
+            height: 72px;
+            background: #FF5A14;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .pay-logo svg {
+            width: 38px;
+            height: 38px;
+            fill: #fff;
+        }
+
+        .pay-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: .5rem;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+            font-size: .8rem;
+        }
+
+        .pay-amount {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #FF5A14;
+            margin: .5rem 0 .75rem;
+            letter-spacing: -.02em;
+        }
+
+        .pay-message {
+            font-size: .9rem;
+            color: #777;
+            margin-bottom: 2rem;
+            min-height: 1.2em;
+        }
+
+        .pay-spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid #fde0d0;
+            border-top-color: #FF5A14;
+            border-radius: 50%;
+            animation: spin .75s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .pay-status {
+            font-size: .85rem;
+            color: #999;
+            margin-bottom: 1.5rem;
+        }
+
+        .pay-fallback {
+            margin-top: 1.5rem;
+        }
+
+        .pay-btn {
+            display: inline-block;
+            background: #FF5A14;
+            color: #fff;
+            border: none;
+            padding: .85rem 2.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background .15s;
+        }
+
+        .pay-btn:hover { background: #e04d0f; }
+
+        .pay-footer {
+            margin-top: 2rem;
+            font-size: .75rem;
+            color: #bbb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="pay-card">
+
+    <div class="pay-logo">
+        {# Stylised payment icon #}
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+        </svg>
+    </div>
+
+    <p class="pay-title">Pay with Swish</p>
+
+    {% if amountMinorUnits %}
+        <div class="pay-amount">{{ amountMinorUnits|swishSek }}</div>
+    {% endif %}
+
+    <p class="pay-message">{{ message ?: 'Swish payment' }}</p>
+
+    <div class="pay-spinner" id="pay-spinner"></div>
+    <p class="pay-status" id="pay-status">Initiating payment request&hellip;</p>
+
+    <form
+        id="pay-form"
+        method="post"
+        action="{{ actionUrl('swish-suite/payments/process') }}"
+        class="pay-fallback"
+        style="display: none;"
+    >
+        {{ csrfInput() }}
+        <input type="hidden" name="amount" value="{{ amount | escape('html_attr') }}">
+        {% if message %}
+            <input type="hidden" name="message" value="{{ message | escape('html_attr') }}">
+        {% endif %}
+        {# No payerAlias → M-Commerce QR code flow #}
+        <button type="submit" class="pay-btn">Pay with Swish</button>
+    </form>
+
+    <p class="pay-footer">Secure payment via Swish</p>
+</div>
+
+<script>
+(function () {
+    var form    = document.getElementById('pay-form');
+    var spinner = document.getElementById('pay-spinner');
+    var status  = document.getElementById('pay-status');
+
+    if (!form) return;
+
+    // Show fallback button as a safety net, then auto-submit
+    form.style.display = 'block';
+
+    var delay = setTimeout(function () {
+        if (status) status.textContent = 'Redirecting to payment…';
+        form.submit();
+    }, 600);
+
+    // If the user manually submits before the timer fires, cancel the timer
+    form.addEventListener('submit', function () { clearTimeout(delay); });
+})();
+</script>
+
+</body>
+</html>

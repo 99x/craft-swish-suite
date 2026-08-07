@@ -1,0 +1,144 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Payment #" ~ payment.id %}
+{% set selectedSubnavItem = "payments" %}
+
+{% block content %}
+<style>
+    /* Show deep-link only on mobile/touch devices. */
+    .swish-open-app { display: none; }
+    @media (pointer: coarse) {
+        .swish-open-app { display: inline-flex; }
+    }
+</style>
+
+<div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+    <form method="post" action="{{ cpUrl('swish-suite/payments/' ~ payment.id ~ '/refresh') }}">
+        {{ csrfInput() }}
+        <button class="btn submit" type="submit">Refresh Status</button>
+    </form>
+    {% if payment.status == 'PAID' and payment.paymentReference %}
+        <a class="btn" href="{{ cpUrl('swish-suite/refunds/new', {paymentId: payment.paymentId}) }}">Create Refund</a>
+    {% endif %}
+    <a class="btn" href="{{ cpUrl('swish-suite/payments') }}">Back to Payments</a>
+</div>
+
+{% if qrCodeDataUri %}
+<div class="pane" style="margin-bottom: 24px; text-align: center;">
+    <h3>Scan with Swish app</h3>
+    <p>This payment is awaiting confirmation. Scan the QR code with the Swish app to complete it.</p>
+    <img src="{{ qrCodeDataUri }}" alt="Swish QR Code" width="280" height="280" style="display: block; margin: 16px auto;">
+    {% if swishUrl is defined and swishUrl %}
+        <div style="margin-top: 12px;">
+            <a class="btn submit swish-open-app" href="{{ swishUrl }}">Open Swish</a>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if payment.status == 'CREATED' %}
+<script>
+(function () {
+    const paymentId = {{ payment.paymentId|json_encode|raw }};
+    const pollUrl = {{ siteUrl('swish/payments/poll')|json_encode|raw }};
+    const statusTextEl = document.getElementById('swish-payment-status-text');
+    const intervalMs = 2500;
+
+    async function tick() {
+        try {
+            const res = await fetch(pollUrl + '?paymentId=' + encodeURIComponent(paymentId));
+            const data = await res.json();
+            if (data && typeof data.status === 'string') {
+                // Update the visible status text.
+                if (statusTextEl) {
+                    statusTextEl.textContent = data.status;
+                }
+                // Reload when terminal so the rest of the UI (refund button etc) is consistent.
+                if (data.status !== 'CREATED' && data.status !== 'UNKNOWN') {
+                    window.location.reload();
+                }
+            }
+        } catch (_) {
+            // ignore
+        }
+    }
+
+    setInterval(tick, intervalMs);
+    tick();
+})();
+</script>
+{% endif %}
+
+<div class="meta">
+    <div class="data">
+        <h5 class="heading">Payment ID</h5>
+        <div class="value">{{ payment.paymentId }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Reference</h5>
+        <div class="value">{{ payment.payeePaymentReference }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Swish Reference</h5>
+        <div class="value">{{ payment.paymentReference ?? '—' }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Amount</h5>
+        <div class="value">{{ payment.amount|swishSek(payment.currency) }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Status</h5>
+        <div class="value">
+            <span class="status {{ payment.status == 'PAID' ? 'green' : (payment.status == 'CREATED' ? 'orange' : 'red') }}"></span>
+            <span id="swish-payment-status-text">{{ payment.status }}</span>
+        </div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Flow</h5>
+        <div class="value">{{ payment.flow }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Payer (Alias)</h5>
+        <div class="value">{{ payment.payerAlias ?? '—' }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Merchant (Alias)</h5>
+        <div class="value">{{ payment.payeeAlias }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Message</h5>
+        <div class="value">{{ payment.message ?? '—' }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Callback Identifier</h5>
+        <div class="value">
+            {% if payment.callbackIdentifier %}
+                {{ payment.callbackIdentifier|slice(0, 6) ~ '...' ~ payment.callbackIdentifier|slice(-4) }}
+            {% else %}
+                —
+            {% endif %}
+        </div>
+    </div>
+    {% if payment.errorCode %}
+    <div class="data">
+        <h5 class="heading">Error</h5>
+        <div class="value">{{ payment.errorCode }}: {{ payment.errorMessage }}</div>
+    </div>
+    {% endif %}
+    <div class="data">
+        <h5 class="heading">Created At</h5>
+        <div class="value">{{ payment.dateCreated|date('Y-m-d H:i:s') }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Updated At</h5>
+        <div class="value">{{ payment.dateUpdated|date('Y-m-d H:i:s') }}</div>
+    </div>
+</div>
+
+{% if payment.swishResponse %}
+<details style="margin-top: 24px;">
+    <summary style="cursor: pointer; color: var(--ui-control-color, #596673); font-size: 13px;">Raw API response</summary>
+    <pre style="margin-top: 8px; font-size: 12px; overflow-x: auto; background: var(--gray-050, #f3f7f9); padding: 12px; border-radius: 4px;">{{ payment.swishResponseArray|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+</details>
+{% endif %}
+{% endblock %}

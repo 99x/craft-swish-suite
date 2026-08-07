@@ -1,0 +1,271 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Welcome to Swish Suite" %}
+
+{% block content %}
+<div class="readable">
+    <h2>Swish payments for Craft CMS</h2>
+    <p>Swish Suite lets you create Swish payment requests, receive asynchronous callbacks, and operate payment flows directly from the Craft Control Panel.</p>
+
+    {% if warnings %}
+        <div class="notice has-icon" style="margin: 20px 0;">
+            <ul>
+                {% for warning in warnings %}
+                    <li>{{ warning }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div style="margin: 20px 0;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+
+            <div style="border: 1px solid #e3e5e8; border-radius: 5px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <strong>Settings</strong>
+                <p style="flex: 1; margin: 0; color: #596673;">Configure your Swish number, certificate paths, environment, and callback routing.</p>
+                <a class="btn" href="{{ cpUrl('settings/plugins/swish-suite') }}" style="background-color:#FF5A14;border-color:#FF5A14;color:#fff;align-self:flex-start;">Open Settings</a>
+            </div>
+
+            <div style="border: 1px solid #e3e5e8; border-radius: 5px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <strong>Dashboard</strong>
+                <p style="flex: 1; margin: 0; color: #596673;">Monitor payment volumes, status breakdown, and recent activity at a glance.</p>
+                <a class="btn" href="{{ cpUrl('swish-suite/dashboard') }}" style="background-color:#FF5A14;border-color:#FF5A14;color:#fff;align-self:flex-start;">View Dashboard</a>
+            </div>
+
+            <div style="border: 1px solid #e3e5e8; border-radius: 5px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <strong>Payments</strong>
+                <p style="flex: 1; margin: 0; color: #596673;">View, search, and manage all payment requests processed through Swish Suite.</p>
+                <a class="btn" href="{{ cpUrl('swish-suite/payments') }}" style="background-color:#FF5A14;border-color:#FF5A14;color:#fff;align-self:flex-start;">View Payments</a>
+            </div>
+
+            <div style="border: 1px solid #e3e5e8; border-radius: 5px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <strong>Refunds</strong>
+                <p style="flex: 1; margin: 0; color: #596673;">Create and track refund requests linked to completed Swish payments.</p>
+                <a class="btn" href="{{ cpUrl('swish-suite/refunds') }}" style="background-color:#FF5A14;border-color:#FF5A14;color:#fff;align-self:flex-start;">View Refunds</a>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="pane" style="margin: 20px 0;">
+        <h3>Plugin status</h3>
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>Setting</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Environment</td>
+                    <td>{{ environmentLabel }}</td>
+                    <td><span class="status {{ environmentLabel == 'Production' ? 'green' : 'orange' }}"></span> {{ environmentLabel }}</td>
+                </tr>
+                <tr>
+                    <td>Merchant Number</td>
+                    <td><code>{{ merchantNumber }}</code></td>
+                    <td>
+                        {% if merchantNumber == 'Not configured' %}
+                            <span class="status red"></span> Missing
+                        {% else %}
+                            <span class="status green"></span> OK
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>API Base URL</td>
+                    <td><code>{{ baseUrl }}</code></td>
+                    <td><span class="status green"></span> Resolved</td>
+                </tr>
+                <tr>
+                    <td>Callback Route</td>
+                    <td><code>{{ callbackRoute }}</code></td>
+                    <td><span class="status {{ callbackRoute != '/' ? 'green' : 'red' }}"></span> {{ callbackRoute != '/' ? 'OK' : 'Unresolved' }}</td>
+                </tr>
+                <tr>
+                    <td>Client Certificate</td>
+                    <td><code>{{ certPath ?: '—' }}</code></td>
+                    <td>
+                        {% if certPathExists %}
+                            <span class="status green"></span> Exists
+                        {% elseif certPath %}
+                            <span class="status red"></span> File not found
+                        {% else %}
+                            <span class="status red"></span> Not configured
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Certificate Password</td>
+                    <td>—</td>
+                    <td><span class="status {{ certPasswordConfigured ? 'green' : 'red' }}"></span> {{ certPasswordConfigured ? 'Configured' : 'Missing' }}</td>
+                </tr>
+                <tr>
+                    <td>CA Certificate</td>
+                    <td><code>{{ caPath ?: '—' }}</code></td>
+                    <td>
+                        {% if caPathExists %}
+                            <span class="status green"></span> Exists
+                        {% elseif caPath %}
+                            <span class="status red"></span> File not found
+                        {% else %}
+                            <span class="status red"></span> Not configured
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Logs</td>
+                    <td>—</td>
+                    <td><span class="status {{ logsEnabled ? 'green' : 'orange' }}"></span> {{ logsEnabled ? 'Enabled' : 'Disabled' }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% if environmentLabel != 'Production' %}
+        <div class="notice has-icon" style="margin: 20px 0;">
+            <p><strong>MSS test mode active.</strong> Swish callbacks must reach an HTTPS endpoint — make sure <code>{{ callbackRoute }}</code> is publicly reachable from the Swish MSS environment before testing.</p>
+        </div>
+    {% endif %}
+
+    {# ── Development Examples ── only visible in devMode ─────────────────── #}
+    {% if craft.app.config.general.devMode %}
+        <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e0e0e0;">
+
+        <h2>Development Examples</h2>
+        <p class="light smalltext" style="margin-bottom: 1.5rem;">Code examples for using Swish Suite in your Twig templates. Only visible when <code>devMode</code> is enabled.</p>
+
+        {% if not swishSuite.isConfigured() %}
+            <p class="warning with-icon" style="margin-bottom: 1.5rem;">
+                Plugin credentials are not fully configured. Set up Swish number and certificate in
+                <a href="{{ cpUrl('settings/plugins/swish-suite') }}">plugin settings</a> before testing the rendered examples.
+            </p>
+        {% endif %}
+
+        <div style="display: grid; gap: 1.5rem;">
+
+            {# ── Example 1: Payment Form ──────────────────────────────────── #}
+            <div class="pane" style="padding: 1.5rem;">
+                <h3 style="margin-top: 0;">Payment Form</h3>
+                <p class="light smalltext">
+                    If the user fills in a phone number, the payment goes to their Swish app (E-Commerce).
+                    If left blank, a QR code is shown (M-Commerce). Both flows use the same form and endpoint.
+                </p>
+<pre style="background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:4px;font-size:0.8rem;overflow-x:auto;margin-bottom:1rem;">{% verbatim %}&lt;form action="{{ swishSuite.paymentFormUrl() }}" method="post"&gt;
+    {{ csrfInput() }}
+    &lt;input type="text" name="amount"     value="10000" placeholder="Amount in &ouml;re (10000 = 100.00 SEK)"&gt;
+    &lt;input type="tel"  name="payerAlias" placeholder="Phone number (optional, e.g. 46701234567)"&gt;
+    &lt;input type="hidden" name="message"  value="Payment"&gt;
+    &lt;button type="submit"&gt;Pay with Swish&lt;/button&gt;
+&lt;/form&gt;{% endverbatim %}</pre>
+                <div style="background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:1rem;">
+                    <p class="smalltext" style="margin-bottom:0.75rem;"><strong>Try it:</strong> Opens a standalone payment page (M-Commerce QR flow) outside the control panel.</p>
+                    <a class="btn submit" href="{{ siteUrl('swish/pay', { amount: 10000, message: 'Dev Example' }) }}" target="_blank" style="background-color:#FF5A14;border-color:#FF5A14;">
+                        Pay with Swish →
+                    </a>
+                </div>
+            </div>
+
+            {# ── Example 2: Amount filter ─────────────────────────────────── #}
+            <div class="pane" style="padding: 1.5rem;">
+                <h3 style="margin-top: 0;">Amount Filter <code>|swishSek</code></h3>
+                <p class="light smalltext">Format an amount stored in öre (integer) as a human-readable SEK string.</p>
+<pre style="background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:4px;font-size:0.8rem;overflow-x:auto;margin-bottom:1rem;">{% verbatim %}{# Format a raw öre value #}
+{{ 9950|swishSek }}
+{# Outputs: 99.50 SEK #}
+
+{# Format from a Payment record #}
+{{ payment.amount|swishSek(payment.currency) }}{% endverbatim %}</pre>
+                <div style="background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:1rem;">
+                    <p class="smalltext" style="margin-bottom:0.5rem;"><strong>Rendered Example:</strong></p>
+                    <code>{{ 9950|swishSek }}</code>
+                </div>
+            </div>
+
+            {# ── Example 3: Commerce checkout ─────────────────────────────── #}
+            {% set commerceInstalled = craft.app.plugins.getPlugin('commerce') is not null %}
+            <div class="pane" style="padding: 1.5rem;">
+                <h3 style="margin-top: 0;">Commerce Checkout Form</h3>
+                <p class="light smalltext">
+                    Use inside your Craft Commerce checkout template. Requires <code>craftcms/commerce ^5.0</code>.
+                    Commerce is currently: <strong>{{ commerceInstalled ? 'installed ✓' : 'not installed' }}</strong>
+                </p>
+<pre style="background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:4px;font-size:0.8rem;overflow-x:auto;">{% verbatim %}{# In your Commerce checkout template #}
+{% set cart = craft.commerce.carts.cart %}
+
+{% for gateway in craft.commerce.gateways.allCustomerEnabledGateways %}
+    {% if gateway.handle == 'swish-suite' %}
+        <form method="post">
+            {{ csrfInput() }}
+            {{ actionInput('commerce/payments/pay') }}
+            {{ redirectInput(cart.returnUrl) }}
+            {{ hiddenInput('gatewayId', gateway.id) }}
+            {{ gateway.getPaymentFormHtml({})|raw }}
+            <button type="submit">
+                Pay {{ cart.totalPrice }} with Swish
+            </button>
+        </form>
+    {% endif %}
+{% endfor %}{% endverbatim %}</pre>
+                {% if commerceInstalled %}
+                    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:1rem;margin-top:1rem;">
+                        <p class="smalltext">
+                            Commerce is installed. Configure the Swish Suite gateway in
+                            <a href="{{ cpUrl('commerce/settings/gateways') }}">Commerce → Settings → Gateways</a>.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# ── Example 4: Commerce Checkout Simulator ────────────────────── #}
+            <div class="pane" style="padding: 1.5rem;">
+                <h3 style="margin-top: 0;">Commerce Checkout Simulator</h3>
+                <p class="light smalltext">
+                    Simulate a real Commerce product checkout. This example shows how a customer would pay for a product through your store using Swish.
+                </p>
+
+                <div style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:4px;padding:1.5rem;margin-bottom:1rem;">
+                    <h4 style="margin-top: 0; color: #555;">Mock Product</h4>
+
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <h5 style="margin: 0 0 0.5rem; color: #333;">Premium Coffee Cup</h5>
+                            <p style="margin: 0 0 1rem; color: #666; font-size: 0.9rem;">
+                                Elegant ceramic coffee cup with Swish Suite branding. Perfect for developers and payment enthusiasts.
+                            </p>
+
+                            <div style="margin-bottom: 1rem;">
+                                <p style="margin: 0 0 0.5rem; font-size: 0.8rem; color: #999; text-transform: uppercase; letter-spacing: 0.05em;">Price</p>
+                                <p style="margin: 0; font-size: 1.8rem; font-weight: 700; color: #FF5A14;">199.00 SEK</p>
+                            </div>
+
+                            <a href="{{ siteUrl('swish/pay', { amount: 19900, message: 'Premium Coffee Cup' }) }}" target="_blank"
+                               style="display: inline-block; background-color: #FF5A14; border-color: #FF5A14; color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">
+                                Buy Now with Swish →
+                            </a>
+                        </div>
+
+                        <div style="width: 180px; height: 180px; background: linear-gradient(135deg, #FF5A14 0%, #E74C00 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 4rem;">
+                            ☕
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:1rem;">
+                    <p class="smalltext" style="margin-bottom:0.75rem;"><strong>What happens when you click "Buy Now":</strong></p>
+                    <ol style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem; color: #666;">
+                        <li>Opens a payment page (in a new tab) outside the admin</li>
+                        <li>Amount is pre-filled: 199.00 SEK (19900 öre)</li>
+                        <li>User can choose: Swish phone number (push) or QR code (scan)</li>
+                        <li>Payment is processed and confirmed via webhook</li>
+                        <li>User is redirected to success/cancel page</li>
+                    </ol>
+                </div>
+            </div>
+
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

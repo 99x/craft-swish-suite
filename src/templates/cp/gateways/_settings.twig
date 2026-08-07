@@ -1,0 +1,53 @@
+{% import "_includes/forms.twig" as forms %}
+
+<div class="field">
+    <p class="instructions">
+        Leave any field blank to inherit from the global <strong>Swish Suite</strong> plugin settings.
+    </p>
+</div>
+
+{{ forms.textField({
+    label:        'Swish Number (override)',
+    id:           'swishNumber',
+    name:         'swishNumber',
+    value:        gateway.swishNumber,
+    instructions: 'The merchant Swish number (e.g. 1234567890).',
+}) }}
+
+{{ forms.textField({
+    label:        'Certificate Path (override)',
+    id:           'certPath',
+    name:         'certPath',
+    value:        gateway.certPath,
+    instructions: 'Absolute path or @alias to the .p12 or .pem certificate.',
+}) }}
+
+{{ forms.passwordField({
+    label:  'Certificate Password (override)',
+    id:     'certPassword',
+    name:   'certPassword',
+    value:  gateway.certPassword,
+}) }}
+
+{{ forms.textField({
+    label:  'CA Certificate Path (override)',
+    id:     'caPath',
+    name:   'caPath',
+    value:  gateway.caPath,
+}) }}
+
+{{ forms.lightswitchField({
+    label:        'Test Mode (override)',
+    id:           'testMode',
+    name:         'testMode',
+    on:           gateway.testMode ?? true,
+    instructions: 'Use the Swish MSS test environment for this gateway instance.',
+}) }}
+
+{{ forms.textField({
+    label:       'Checkout Screen Title',
+    id:          'checkoutTitle',
+    name:        'checkoutTitle',
+    value:       gateway.checkoutTitle,
+    placeholder: 'Pay with Swish',
+}) }}

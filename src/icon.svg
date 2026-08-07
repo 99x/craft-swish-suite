@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <style>
+      .swish-bg { fill: #FF5A14; }
+      .swish-bolt { fill: white; }
+    </style>
+  </defs>
+  <circle cx="32" cy="32" r="32" class="swish-bg"/>
+  <path d="M 42 12 L 28 36 L 38 36 L 20 56 L 32 32 L 22 32 Z" class="swish-bolt"/>
+</svg>

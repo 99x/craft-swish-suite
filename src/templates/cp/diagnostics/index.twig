@@ -1,0 +1,68 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Swish Diagnostics" %}
+{% set selectedSubnavItem = "diagnostics" %}
+
+{% block content %}
+<div class="readable">
+    {% if warnings %}
+        <div class="notice has-icon">
+            <ul>
+                {% for warning in warnings %}
+                    <li>{{ warning }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="meta">
+        <div class="data">
+            <h5 class="heading">Environment</h5>
+            <div class="value">{{ environmentLabel }}</div>
+        </div>
+        <div class="data">
+            <h5 class="heading">Resolved Base URL</h5>
+            <div class="value"><code>{{ baseUrl }}</code></div>
+        </div>
+        <div class="data">
+            <h5 class="heading">Resolved Callback Route</h5>
+            <div class="value"><code>{{ callbackRoute }}</code></div>
+        </div>
+        <div class="data">
+            <h5 class="heading">Merchant Number</h5>
+            <div class="value">{{ merchantNumber }}</div>
+        </div>
+        <div class="data">
+            <h5 class="heading">Certificate Password</h5>
+            <div class="value">{{ certPasswordConfigured ? 'Configured' : 'Missing' }}</div>
+        </div>
+        <div class="data">
+            <h5 class="heading">Logs</h5>
+            <div class="value">{{ logsEnabled ? 'Enabled' : 'Disabled' }}</div>
+        </div>
+    </div>
+
+    <h2>File checks</h2>
+    <table class="data fullwidth">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Path</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Client certificate</td>
+                <td><code>{{ certPath ?: 'Not configured' }}</code></td>
+                <td>{{ certPathExists ? 'Exists' : 'Missing / invalid' }}</td>
+            </tr>
+            <tr>
+                <td>CA certificate</td>
+                <td><code>{{ caPath ?: 'Not configured' }}</code></td>
+                <td>{{ caPathExists ? 'Exists' : 'Missing / invalid' }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

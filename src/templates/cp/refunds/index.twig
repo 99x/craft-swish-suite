@@ -1,0 +1,53 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Refunds" %}
+{% set selectedSubnavItem = "refunds" %}
+
+{% block content %}
+<div class="toolbar">
+    <a class="btn submit" href="{{ cpUrl('swish-suite/payments') }}">Back to Payments</a>
+</div>
+
+{% if refunds %}
+    <table class="data fullwidth">
+        <thead>
+            <tr>
+                <th>Refund ID</th>
+                <th>Payment</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for refund in refunds %}
+                {% set payment = refund.payment %}
+                <tr>
+                    <td>
+                        <a href="{{ cpUrl('swish-suite/refunds/' ~ refund.id) }}">
+                            {{ refund.refundId|slice(0, 8) }}...
+                        </a>
+                    </td>
+                    <td>
+                        {% if payment %}
+                            <a href="{{ cpUrl('swish-suite/payments/' ~ payment.id) }}">
+                                {{ payment.paymentId|slice(0, 8) }}...
+                            </a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>{{ refund.amount|swishSek(refund.currency) }}</td>
+                    <td>
+                        <span class="status {{ refund.status == 'PAID' ? 'green' : (refund.status == 'CREATED' ? 'orange' : 'red') }}"></span>
+                        {{ refund.status }}
+                    </td>
+                    <td>{{ refund.dateCreated|date('Y-m-d H:i') }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No refunds have been created yet. Refunds can be initiated from the detail view of a PAID payment.</p>
+{% endif %}
+{% endblock %}

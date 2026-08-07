@@ -1,0 +1,84 @@
+{% import '_includes/forms' as forms %}
+
+{{ forms.autosuggestField({
+    label: 'Swish Number (Merchant)',
+    instructions: 'Your 10-digit Swish merchant number (for example: 1234679304)',
+    id: 'swishNumber',
+    name: 'swishNumber',
+    value: settings.swishNumber,
+    suggestEnvVars: true,
+    required: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Certificate Path (.p12)',
+    instructions: 'Absolute path to the client certificate',
+    id: 'certPath',
+    name: 'certPath',
+    value: settings.certPath,
+    suggestEnvVars: true,
+    suggestAliases: true,
+    required: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Certificate Password',
+    id: 'certPassword',
+    name: 'certPassword',
+    value: settings.certPassword,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'CA Path (Swish_TLS_RootCA.pem)',
+    instructions: 'Path to the Swish root CA certificate',
+    id: 'caPath',
+    name: 'caPath',
+    value: settings.caPath,
+    suggestEnvVars: true,
+    suggestAliases: true,
+    required: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Success URL',
+    instructions: 'Redirect URL after a successful payment',
+    id: 'successUrl',
+    name: 'successUrl',
+    value: settings.successUrl,
+    suggestEnvVars: true,
+    suggestAliases: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Cancel URL',
+    instructions: 'Redirect URL after a cancelled payment',
+    id: 'cancelUrl',
+    name: 'cancelUrl',
+    value: settings.cancelUrl,
+    suggestEnvVars: true,
+    suggestAliases: true
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Checkout Title',
+    id: 'checkoutTitle',
+    name: 'checkoutTitle',
+    value: settings.checkoutTitle,
+    suggestEnvVars: true
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Test Mode (MSS)',
+    instructions: 'Enable to use the Swish MSS test environment',
+    id: 'testMode',
+    name: 'testMode',
+    on: settings.testMode
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Enable Logs',
+    id: 'logsEnabled',
+    name: 'logsEnabled',
+    on: settings.logsEnabled
+}) }}

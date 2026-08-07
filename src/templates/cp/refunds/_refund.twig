@@ -1,0 +1,99 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Refund #" ~ refund.id %}
+{% set selectedSubnavItem = "refunds" %}
+
+{% block content %}
+<div style="margin-bottom: 16px; display: flex; gap: 8px;">
+    <form method="post" action="{{ cpUrl('swish-suite/refunds/' ~ refund.id ~ '/refresh') }}">
+        {{ csrfInput() }}
+        <button class="btn submit" type="submit">Refresh Status</button>
+    </form>
+    <a class="btn" href="{{ cpUrl('swish-suite/refunds') }}">Back to Refunds</a>
+</div>
+
+<div class="meta">
+    <div class="data">
+        <h5 class="heading">Refund ID</h5>
+        <div class="value">{{ refund.refundId }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Status</h5>
+        <div class="value">
+            <span class="status {{ refund.status == 'PAID' ? 'green' : (refund.status == 'CREATED' ? 'orange' : 'red') }}"></span>
+            {{ refund.status }}
+        </div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Amount</h5>
+        <div class="value">{{ refund.amount|swishSek(refund.currency) }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Original Payment Reference</h5>
+        <div class="value">{{ refund.originalPaymentReference }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Swish Refund Reference</h5>
+        <div class="value">{{ refund.paymentReference ?? '—' }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Merchant Reference</h5>
+        <div class="value">{{ refund.payerPaymentReference ?? '—' }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Payer (Merchant)</h5>
+        <div class="value">{{ refund.payerAlias ?? '—' }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Payee (Consumer)</h5>
+        <div class="value">{{ refund.payeeAlias ?? '—' }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Message</h5>
+        <div class="value">{{ refund.message ?? '—' }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Callback Identifier</h5>
+        <div class="value">
+            {% if refund.callbackIdentifier %}
+                {{ refund.callbackIdentifier|slice(0, 6) ~ '...' ~ refund.callbackIdentifier|slice(-4) }}
+            {% else %}
+                —
+            {% endif %}
+        </div>
+    </div>
+    {% if refund.errorCode %}
+    <div class="data">
+        <h5 class="heading">Error</h5>
+        <div class="value">{{ refund.errorCode }}: {{ refund.errorMessage }}</div>
+    </div>
+    {% endif %}
+    <div class="data">
+        <h5 class="heading">Created</h5>
+        <div class="value">{{ refund.dateCreated|date('Y-m-d H:i:s') }}</div>
+    </div>
+    <div class="data">
+        <h5 class="heading">Updated</h5>
+        <div class="value">{{ refund.dateUpdated|date('Y-m-d H:i:s') }}</div>
+    </div>
+</div>
+
+{% set payment = refund.payment %}
+{% if payment %}
+<div class="pane" style="margin-top: 24px;">
+    <h3>Original Payment</h3>
+    <p>
+        <a href="{{ cpUrl('swish-suite/payments/' ~ payment.id) }}">
+            {{ payment.paymentId }}
+        </a>
+        — {{ payment.amount|swishSek(payment.currency) }}
+        — <span class="status {{ payment.status == 'PAID' ? 'green' : 'orange' }}"></span>{{ payment.status }}
+    </p>
+</div>
+{% endif %}
+
+{% if refund.swishResponse %}
+<h2 style="margin-top: 24px;">Swish Response</h2>
+<pre>{{ refund.swishResponseArray|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+{% endif %}
+{% endblock %}

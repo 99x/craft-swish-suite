@@ -1,0 +1,83 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Waiting for payment – " ~ payment.paymentId %}
+
+{% block content %}
+<div class="readable" style="text-align: center; padding: 40px 0;">
+
+    <h2>Scan with Swish app</h2>
+    <p>Show this QR code to the customer. The payment will be confirmed automatically.</p>
+
+    <div style="margin: 32px auto; display: inline-block;">
+        <img src="{{ qrCodeDataUri }}" alt="Swish QR Code" width="280" height="280">
+    </div>
+
+    <div class="meta" style="text-align: left; margin-bottom: 24px;">
+        <div class="data">
+            <h5 class="heading">Payment ID</h5>
+            <div class="value">{{ payment.paymentId }}</div>
+        </div>
+        <div class="data">
+            <h5 class="heading">Amount</h5>
+            <div class="value">{{ payment.amount|swishSek(payment.currency) }}</div>
+        </div>
+        {% if payment.message %}
+        <div class="data">
+            <h5 class="heading">Message</h5>
+            <div class="value">{{ payment.message }}</div>
+        </div>
+        {% endif %}
+        <div class="data">
+            <h5 class="heading">Status</h5>
+            <div class="value" id="payment-status">
+                <span class="status orange"></span> Waiting for confirmation…
+            </div>
+        </div>
+    </div>
+
+    <p class="light" style="font-size: 13px;">This payment expires in <strong>3 minutes</strong>. You can close this tab at any time — the payment will still be processed.</p>
+
+</div>
+
+<script>
+(function () {
+    const paymentId  = {{ payment.paymentId | json_encode | raw }};
+    const redirectUrl = {{ redirectUrl | json_encode | raw }};
+    const cancelUrl   = {{ cpUrl('swish-suite/payments') | json_encode | raw }};
+    const pollUrl     = {{ siteUrl('swish/payments/poll') | json_encode | raw }};
+    const expiryMs    = 3 * 60 * 1000;
+    const intervalMs  = 2500;
+    const statusEl    = document.getElementById('payment-status');
+
+    let elapsed = 0;
+
+    const poll = setInterval(async function () {
+        elapsed += intervalMs;
+
+        if (elapsed >= expiryMs) {
+            clearInterval(poll);
+            statusEl.innerHTML = '<span class="status red"></span> Payment expired.';
+            setTimeout(function () { window.location.href = cancelUrl; }, 2000);
+            return;
+        }
+
+        try {
+            const res  = await fetch(pollUrl + '?paymentId=' + encodeURIComponent(paymentId));
+            const data = await res.json();
+
+            if (data.status === 'PAID') {
+                clearInterval(poll);
+                statusEl.innerHTML = '<span class="status green"></span> Payment confirmed! Redirecting…';
+                window.location.href = redirectUrl;
+            } else if (data.status === 'DECLINED' || data.status === 'CANCELLED' || data.status === 'ERROR') {
+                clearInterval(poll);
+                statusEl.innerHTML = '<span class="status red"></span> Payment ' + data.status.toLowerCase() + '. Redirecting…';
+                setTimeout(function () { window.location.href = cancelUrl; }, 2000);
+            }
+        } catch (_) {
+            // Network error — keep polling
+        }
+    }, intervalMs);
+})();
+</script>
+{% endblock %}

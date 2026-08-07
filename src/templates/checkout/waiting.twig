@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiting for Swish payment</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #fff8f5 0%, #ffe8d9 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1a1a1a;
+        }
+
+        .waiting-container {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 48px rgba(255, 90, 20, .12);
+            padding: 3rem 2.5rem;
+            max-width: 440px;
+            width: calc(100% - 2rem);
+            text-align: center;
+        }
+
+        .waiting-header {
+            margin-bottom: 2rem;
+        }
+
+        .waiting-logo {
+            width: 72px;
+            height: 72px;
+            background: #FF5A14;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .waiting-logo svg {
+            width: 38px;
+            height: 38px;
+            fill: #fff;
+        }
+
+        .waiting-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: .5rem;
+        }
+
+        .waiting-subtitle {
+            font-size: .95rem;
+            color: #888;
+            margin-bottom: 1.5rem;
+        }
+
+        .qr-section {
+            margin: 2rem 0;
+        }
+
+        .qr-image {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background: #f9f9f9;
+            padding: 1rem;
+            border: 2px solid #fde0d0;
+        }
+
+        .waiting-status {
+            background: #fffbf7;
+            border-left: 4px solid #FF5A14;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            font-size: .9rem;
+            color: #555;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .waiting-status.loading {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fde0d0;
+            border-top-color: #FF5A14;
+            border-radius: 50%;
+            animation: spin .75s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .waiting-status.success {
+            background: #f0f8f5;
+            border-left-color: #22c55e;
+            color: #166534;
+        }
+
+        .waiting-status.error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+            color: #7f1d1d;
+        }
+
+        .countdown {
+            font-size: .85rem;
+            color: #999;
+            margin: 1rem 0;
+        }
+
+        .waiting-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: .85rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all .15s;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #FF5A14;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #e04d0f;
+            box-shadow: 0 4px 16px rgba(255, 90, 20, .25);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #555;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e5e5;
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        @media (pointer: coarse) {
+            .btn-open-app { display: inline-block; }
+        }
+
+        @media (pointer: fine) {
+            .btn-open-app { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .waiting-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .waiting-title {
+                font-size: 1.1rem;
+            }
+
+            .qr-image {
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="waiting-container">
+    <div class="waiting-header">
+        <div class="waiting-logo">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+            </svg>
+        </div>
+
+        {% if flow == 'mcommerce' and qrCodeDataUri is defined %}
+            <h1 class="waiting-title">Scan to Pay</h1>
+            <p class="waiting-subtitle">Open Swish on your phone and scan the QR code</p>
+        {% else %}
+            <h1 class="waiting-title">Confirm Payment</h1>
+            <p class="waiting-subtitle">Open the Swish app on your phone and approve the payment</p>
+        {% endif %}
+    </div>
+
+    {% if flow == 'mcommerce' and qrCodeDataUri is defined %}
+        <div class="qr-section">
+            <img src="{{ qrCodeDataUri }}" alt="Swish QR Code" class="qr-image">
+        </div>
+    {% endif %}
+
+    <div class="waiting-status loading" id="swish-status-message" aria-live="polite">
+        <div class="spinner"></div>
+        <span>Waiting for payment confirmation…</span>
+    </div>
+
+    <div class="countdown">
+        Payment expires in <strong id="countdown-timer">3:00</strong>
+    </div>
+
+    <div class="waiting-actions">
+        {% if swishUrl is defined and swishUrl %}
+            <a href="{{ swishUrl }}" class="btn btn-secondary btn-open-app">Open Swish App</a>
+        {% endif %}
+        <a href="{{ siteUrl('swish/payments/success', { paymentId: paymentId }) }}" class="btn btn-primary">
+            Already Paid?
+        </a>
+        <a href="{{ siteUrl('swish/payments/cancel', { paymentId: paymentId }) }}" class="btn btn-danger">
+            Cancel Payment
+        </a>
+    </div>
+</div>
+
+<script>
+(function () {
+    const paymentId   = {{ paymentId | json_encode | raw }};
+    const successUrl  = {{ siteUrl('swish/payments/success', { paymentId: paymentId }) | json_encode | raw }};
+    const cancelUrl   = {{ siteUrl('swish/payments/cancel', { paymentId: paymentId }) | json_encode | raw }};
+    const pollBaseUrl = {{ siteUrl('swish/payments/poll') | json_encode | raw }};
+    const expiryMs    = 3 * 60 * 1000;
+    const intervalMs  = 2500;
+    const statusEl    = document.getElementById('swish-status-message');
+    const timerEl     = document.getElementById('countdown-timer');
+
+    let elapsed = 0;
+
+    const poll = setInterval(async function () {
+        elapsed += intervalMs;
+
+        // Update countdown timer
+        if (timerEl) {
+            const remaining = Math.max(0, expiryMs - elapsed);
+            const mins = Math.floor(remaining / 60000);
+            const secs = Math.floor((remaining % 60000) / 1000);
+            timerEl.textContent = mins + ':' + String(secs).padStart(2, '0');
+        }
+
+        if (elapsed >= expiryMs) {
+            clearInterval(poll);
+            if (statusEl) {
+                statusEl.className = 'waiting-status error';
+                statusEl.innerHTML = '⏱ Payment expired. Redirecting…';
+            }
+            setTimeout(function () { window.location.href = cancelUrl; }, 1500);
+            return;
+        }
+
+        try {
+            const res  = await fetch(pollBaseUrl + '?paymentId=' + encodeURIComponent(paymentId));
+            const data = await res.json();
+
+            if (statusEl && data && typeof data.status === 'string') {
+                const statusLower = data.status.toLowerCase();
+
+                if (data.status === 'PAID') {
+                    statusEl.className = 'waiting-status success';
+                    statusEl.innerHTML = '✓ Payment confirmed! Redirecting…';
+                    clearInterval(poll);
+                    setTimeout(function () { window.location.href = successUrl; }, 1000);
+                } else if (data.status === 'DECLINED' || data.status === 'CANCELLED' || data.status === 'ERROR') {
+                    statusEl.className = 'waiting-status error';
+                    statusEl.innerHTML = '✗ Payment ' + statusLower + '. Redirecting…';
+                    clearInterval(poll);
+                    setTimeout(function () { window.location.href = cancelUrl; }, 1500);
+                } else {
+                    statusEl.className = 'waiting-status loading';
+                    const now = new Date();
+                    const hh = String(now.getHours()).padStart(2, '0');
+                    const mm = String(now.getMinutes()).padStart(2, '0');
+                    statusEl.innerHTML = '<div class="spinner"></div><span>Status: ' + data.status + ' (checked ' + hh + ':' + mm + ')</span>';
+                }
+            }
+        } catch (_) {
+            if (statusEl) {
+                statusEl.className = 'waiting-status loading';
+                statusEl.innerHTML = '<div class="spinner"></div><span>Checking payment status…</span>';
+            }
+        }
+    }, intervalMs);
+})();
+</script>
+
+</body>
+</html>
+
+{% block javascript %}
+<script>
+(function () {
+    const paymentId  = {{ paymentId | json_encode | raw }};
+    const successUrl = {{ (craft.app.request.queryParam('returnUrl') ?? siteUrl('swish/payments/success', { paymentId: paymentId })) | json_encode | raw }};
+    const cancelUrl  = {{ (craft.app.request.queryParam('cancelUrl') ?? siteUrl('swish/payments/cancel',  { paymentId: paymentId })) | json_encode | raw }};
+    const pollBaseUrl = {{ siteUrl('swish/payments/poll') | json_encode | raw }};
+    const expiryMs   = 3 * 60 * 1000;
+    const intervalMs = 2500;
+    const statusEl   = document.getElementById('swish-status-message');
+
+    let elapsed = 0;
+    if (statusEl) {
+        statusEl.textContent = 'Waiting for payment confirmation…';
+    }
+
+    const poll = setInterval(async function () {
+        elapsed += intervalMs;
+
+        if (elapsed >= expiryMs) {
+            clearInterval(poll);
+            statusEl.textContent = 'Payment expired. Redirecting…';
+            window.location.href = cancelUrl;
+            return;
+        }
+
+        try {
+            const res  = await fetch(pollBaseUrl + '?paymentId=' + encodeURIComponent(paymentId));
+            const data = await res.json();
+
+            if (statusEl && data && typeof data.status === 'string') {
+                const now = new Date();
+                const hh = String(now.getHours()).padStart(2, '0');
+                const mm = String(now.getMinutes()).padStart(2, '0');
+                const ss = String(now.getSeconds()).padStart(2, '0');
+                statusEl.textContent = 'Status: ' + data.status + ' (checked ' + hh + ':' + mm + ':' + ss + ')';
+            }
+
+            if (data.status === 'PAID') {
+                clearInterval(poll);
+                if (statusEl) statusEl.textContent = 'Payment confirmed! Redirecting…';
+                window.location.href = successUrl;
+            } else if (data.status === 'DECLINED' || data.status === 'CANCELLED' || data.status === 'ERROR') {
+                clearInterval(poll);
+                if (statusEl) statusEl.textContent = 'Payment ' + data.status.toLowerCase() + '. Redirecting…';
+                window.location.href = cancelUrl;
+            }
+        } catch (_) {
+            // Network error — keep polling
+            if (statusEl) {
+                statusEl.textContent = 'Checking payment status…';
+            }
+        }
+    }, intervalMs);
+})();
+</script>
+{% endblock %}

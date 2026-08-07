@@ -1,0 +1,22 @@
+{% set title = gateway.checkoutTitle ?: 'Pay with Swish' %}
+
+<div class="swish-payment-form">
+    <h3>{{ title }}</h3>
+
+    <div class="field">
+        <label for="payerAlias">Swish phone number <span class="info">(optional — leave blank to use QR code)</span></label>
+        <input
+            type="tel"
+            id="payerAlias"
+            name="payerAlias"
+            value="{{ payerAlias ?? '' }}"
+            placeholder="46701234567"
+            pattern="^46[0-9]{7,13}$"
+            class="text"
+        >
+        <p class="instructions">
+            Enter your Swedish Swish number (format: 46XXXXXXXXX) to receive a push notification,
+            or leave blank to scan a QR code.
+        </p>
+    </div>
+</div>

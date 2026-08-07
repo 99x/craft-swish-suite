@@ -1,0 +1,46 @@
+{
+    "name": "99x/craft-swish-suite",
+    "description": "Craft CMS plugin for Swish payment integration",
+    "type": "craft-plugin",
+    "license": "MIT",
+    "require": {
+        "craftcms/cms": "^5.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "ramsey/uuid": "^4.0",
+        "endroid/qr-code": "^5.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "suggest": {
+        "craftcms/commerce": "^5.0 — Required to use Swish Suite as a Commerce payment gateway"
+    },
+    "scripts": {
+        "unit": "phpunit",
+        "test": "@unit"
+    },
+    "autoload": {
+        "psr-4": {
+            "NinetyNineX\\SwishSuite\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NinetyNineX\\SwishSuite\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "name": "Swish Suite",
+        "handle": "swish-suite",
+        "developer": "99x",
+        "developerUrl": "https://99x.se",
+        "class": "NinetyNineX\\SwishSuite\\SwishSuite",
+        "schemaVersion": "1.1.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
+    }
+}

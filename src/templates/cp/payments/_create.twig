@@ -1,0 +1,99 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Create Payment" %}
+{% set selectedSubnavItem = "payments" %}
+
+{% block content %}
+<div class="pane readable" style="margin-bottom: 24px;">
+    <h2>New Swish Payment</h2>
+    <p>Create a payment request directly from the Control Panel.</p>
+    <p>If you leave the payer Swish number blank, the payment will be created as M-Commerce.</p>
+</div>
+
+<form method="post" action="{{ cpUrl('swish-suite/payments/store') }}" class="pane readable">
+    {{ csrfInput() }}
+
+    <div class="field">
+        <div class="heading">
+            <label for="payerAlias">Payer Swish Number</label>
+        </div>
+        <div class="instructions">
+            <p>Optional. Include the country code, for example: 46701234567. Leave blank for M-Commerce.</p>
+        </div>
+        <div class="input">
+            <input
+                class="text fullwidth"
+                type="text"
+                id="payerAlias"
+                name="payerAlias"
+                value="{{ formData.payerAlias }}"
+                placeholder="46701234567"
+            >
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="heading">
+            <label for="amount">Amount (SEK)</label>
+        </div>
+        <div class="input">
+            <input
+                class="text"
+                type="number"
+                id="amount"
+                name="amount"
+                value="{{ formData.amount }}"
+                step="0.01"
+                min="0.01"
+                required
+                placeholder="100.00"
+            >
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="heading">
+            <label for="reference">Merchant Reference</label>
+        </div>
+        <div class="instructions">
+            <p>Optional. Allowed characters: A-Z, 0-9, and hyphens. Max 35 characters.</p>
+        </div>
+        <div class="input">
+            <input
+                class="text fullwidth"
+                type="text"
+                id="reference"
+                name="reference"
+                value="{{ formData.reference }}"
+                maxlength="35"
+                placeholder="ORDER-12345"
+            >
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="heading">
+            <label for="message">Message</label>
+        </div>
+        <div class="instructions">
+            <p>Optional. Maximum 50 characters.</p>
+        </div>
+        <div class="input">
+            <input
+                class="text fullwidth"
+                type="text"
+                id="message"
+                name="message"
+                value="{{ formData.message }}"
+                maxlength="50"
+                placeholder="Order payment"
+            >
+        </div>
+    </div>
+
+    <div class="flex" style="gap: 8px; margin-top: 16px;">
+        <button class="btn submit" type="submit" id="create-payment-btn">Create Payment</button>
+        <a class="btn" href="{{ cpUrl('swish-suite/payments') }}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

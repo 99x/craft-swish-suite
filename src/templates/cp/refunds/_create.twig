@@ -1,0 +1,82 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Create Refund" %}
+{% set selectedSubnavItem = "refunds" %}
+
+{% block content %}
+<div class="pane readable" style="margin-bottom: 24px;">
+    <h2>Payment Summary</h2>
+    <table class="data">
+        <tbody>
+            <tr>
+                <th>Payment ID</th>
+                <td>{{ payment.paymentId }}</td>
+            </tr>
+            <tr>
+                <th>Swish Reference</th>
+                <td>{{ payment.paymentReference }}</td>
+            </tr>
+            <tr>
+                <th>Original Amount</th>
+                <td>{{ payment.amount|swishSek(payment.currency) }}</td>
+            </tr>
+            <tr>
+                <th>Available to Refund</th>
+                <td><strong>{{ availableMinorUnits|swishSek(payment.currency) }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+{% if availableMinorUnits <= 0 %}
+    <div class="notice has-icon">
+        <p>This payment has been fully refunded. No additional refunds are possible.</p>
+    </div>
+{% else %}
+    <form method="post" action="{{ cpUrl('swish-suite/refunds/store') }}" class="pane readable">
+        {{ csrfInput() }}
+        <input type="hidden" name="paymentRecordId" value="{{ payment.id }}">
+
+        <div class="field">
+            <div class="heading">
+                <label for="amount">Refund amount (SEK)</label>
+            </div>
+            <div class="input">
+                <input
+                    class="text"
+                    type="number"
+                    id="amount"
+                    name="amount"
+                    step="0.01"
+                    min="0.01"
+                    max="{{ availableMinorUnits / 100 }}"
+                    required
+                    placeholder="e.g. {{ availableMinorUnits / 100 }}"
+                >
+            </div>
+            <p class="instructions">Maximum: {{ availableMinorUnits|swishSek(payment.currency) }}</p>
+        </div>
+
+        <div class="field">
+            <div class="heading">
+                <label for="message">Message (optional, max 50 characters)</label>
+            </div>
+            <div class="input">
+                <input
+                    class="text fullwidth"
+                    type="text"
+                    id="message"
+                    name="message"
+                    maxlength="50"
+                    placeholder="Reason for refund"
+                >
+            </div>
+        </div>
+
+        <div class="flex" style="gap: 8px; margin-top: 16px;">
+            <button class="btn submit" type="submit">Create Refund</button>
+            <a class="btn" href="{{ cpUrl('swish-suite/payments/' ~ payment.id) }}">Cancel</a>
+        </div>
+    </form>
+{% endif %}
+{% endblock %}

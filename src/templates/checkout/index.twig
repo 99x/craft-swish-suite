@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ settings.checkoutTitle }}</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #fff8f5 0%, #ffe8d9 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1a1a1a;
+        }
+
+        .checkout-container {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 48px rgba(255, 90, 20, .12);
+            padding: 3rem 2.5rem;
+            max-width: 420px;
+            width: calc(100% - 2rem);
+        }
+
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .checkout-logo {
+            width: 64px;
+            height: 64px;
+            background: #FF5A14;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .checkout-logo svg {
+            width: 34px;
+            height: 34px;
+            fill: #fff;
+        }
+
+        .checkout-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: .5rem;
+        }
+
+        .checkout-subtitle {
+            font-size: .9rem;
+            color: #888;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: .9rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: .5rem;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        input[type="number"] {
+            width: 100%;
+            padding: .75rem 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #FF5A14;
+            box-shadow: 0 0 0 3px rgba(255, 90, 20, .1);
+        }
+
+        input:disabled {
+            background: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            font-size: .8rem;
+            color: #999;
+            margin-top: .4rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: .9rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: .95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all .15s;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+
+        .btn-primary {
+            background: #FF5A14;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #e04d0f;
+            box-shadow: 0 4px 16px rgba(255, 90, 20, .25);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #555;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e5e5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #fde0d0;
+            border-top-color: #FF5A14;
+            border-radius: 50%;
+            animation: spin .75s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 480px) {
+            .checkout-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .checkout-title {
+                font-size: 1.25rem;
+            }
+
+            label {
+                font-size: .8rem;
+            }
+
+            input {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="checkout-container">
+    <div class="checkout-header">
+        <div class="checkout-logo">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+            </svg>
+        </div>
+        <h1 class="checkout-title">{{ settings.checkoutTitle }}</h1>
+        <p class="checkout-subtitle">Secure payment via Swish</p>
+    </div>
+
+    {# Template logic for GET params or embedded usage #}
+    {% set ctxAmount    = amount    ?? craft.app.request.getQueryParam('amount') %}
+    {% set ctxReference = reference ?? craft.app.request.getQueryParam('reference') %}
+    {% set ctxMessage   = message   ?? craft.app.request.getQueryParam('message') %}
+    {% set ctxLock      = lockAmount is defined ? lockAmount : craft.app.request.getQueryParam('lock') %}
+
+    <!-- Commerce Checkout Form -->
+    <form method="post" action="{{ actionUrl('swish-suite/payments/process') }}" id="swish-checkout-form">
+        {{ csrfInput() }}
+        {% if ctxReference %}<input type="hidden" name="reference" value="{{ ctxReference }}">{% endif %}
+
+        <div class="form-group">
+            <label for="payerAlias">Phone Number (E-Commerce)</label>
+            <input type="tel"
+                   id="payerAlias"
+                   name="payerAlias"
+                   placeholder="46701234567"
+                   autocomplete="tel"
+                   inputmode="tel">
+            <p class="hint">Optional. Leave blank to pay via QR code.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Amount (SEK)</label>
+            {% if ctxLock %}
+                <input type="hidden" name="amount" value="{{ ctxAmount }}">
+                <input type="text" id="amount" value="{{ ctxAmount }} SEK" readonly disabled>
+            {% else %}
+                <input type="number"
+                       id="amount"
+                       name="amount"
+                       min="1"
+                       step="0.01"
+                       required
+                       inputmode="decimal"
+                       value="{{ ctxAmount ?: '' }}"
+                       placeholder="100.00">
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="message">Message (optional)</label>
+            <input type="text"
+                   id="message"
+                   name="message"
+                   maxlength="50"
+                   value="{{ ctxMessage ?: '' }}"
+                   placeholder="Order description (max. 50 chars)">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Pay Now</button>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+{% extends "_layouts/cp" %}
+
+{% set title = "Swish Dashboard" %}
+{% set selectedSubnavItem = "dashboard" %}
+
+{% block content %}
+<div class="readable">
+    {% if configWarnings %}
+        <div class="notice has-icon">
+            <ul>
+                {% for warning in configWarnings %}
+                    <li>{{ warning }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+        <div class="pane">
+            <h3>Total Payments</h3>
+            <p><strong>{{ totalPayments }}</strong></p>
+        </div>
+        <div class="pane">
+            <h3>Total Paid Volume</h3>
+            <p><strong>{{ paidAmount }}</strong></p>
+        </div>
+        <div class="pane">
+            <h3>Operational Alerts</h3>
+            <p>{{ stuckCreatedCount }} stuck in CREATED</p>
+            <p>{{ recentErrorCount }} recent failed/error payments</p>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin-top: 16px;">
+        {% for status, count in statusCounts %}
+            <div class="pane">
+                <h3>{{ status }}</h3>
+                <p><strong>{{ count }}</strong></p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h2 style="margin-top: 24px;">Recent Payments</h2>
+
+    {% if recentPayments %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Reference</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Flow</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in recentPayments %}
+                    <tr>
+                        <td><a href="{{ cpUrl('swish-suite/payments/' ~ payment.id) }}">{{ payment.paymentId|slice(0, 8) }}...</a></td>
+                        <td>{{ payment.payeePaymentReference ?: '—' }}</td>
+                        <td>{{ payment.amount|swishSek(payment.currency) }}</td>
+                        <td><span class="status {{ payment.status == 'PAID' ? 'green' : (payment.status == 'CREATED' ? 'orange' : 'red') }}"></span>{{ payment.status }}</td>
+                        <td>{{ payment.flow ?: '—' }}</td>
+                        <td>{{ payment.dateCreated|date('Y-m-d H:i') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No payments have been recorded yet.</p>
+    {% endif %}
+
+</div>
+{% endblock %}
