@@ -103,15 +103,32 @@ class SwishGateway extends Gateway
         $orderRef     = $order?->reference ?? 'ORDER';
         $safeReference = $service->generateSafeReference($orderRef);
 
-        $result = $service->createPaymentRequest(
-            paymentId:          $paymentId,
-            amountMinorUnits:   $amountMinorUnits,
-            callbackUrl:        $callbackUrl,
-            payerAlias:         $payerAlias,
-            reference:          $safeReference,
-            message:            $order?->reference ?? '',
-            callbackIdentifier: $callbackIdentifier,
-        );
+        try {
+            $result = $service->createPaymentRequest(
+                paymentId:          $paymentId,
+                amountMinorUnits:   $amountMinorUnits,
+                callbackUrl:        $callbackUrl,
+                payerAlias:         $payerAlias,
+                reference:          $safeReference,
+                message:            $order?->reference ?? '',
+                callbackIdentifier: $callbackIdentifier,
+            );
+        } catch (\Throwable $e) {
+            $errorHandler = SwishSuite::getInstance()->errorHandler;
+            $errorCode = $errorHandler->detectErrorCode($e);
+            $errorMessage = $errorHandler->getErrorMessage($errorCode, [
+                'callbackUrl' => $callbackUrl,
+                'certPath' => $globalSettings->certPath,
+                'caPath' => $globalSettings->caPath,
+            ]);
+
+            SwishSuite::getInstance()->helpers->logError(
+                'Payment creation failed: ' . $errorMessage . ' (' . $e->getMessage() . ')',
+                __METHOD__
+            );
+
+            return SwishRequestResponse::asFailure($errorMessage, $errorCode);
+        }
 
         if (!$result) {
             return SwishRequestResponse::asFailure('Failed to initiate Swish payment request.');
@@ -208,7 +225,13 @@ class SwishGateway extends Gateway
             return SwishRequestResponse::asFailure('Cannot find original payment ID for refund.');
         }
 
-        $payment = Payment::find()->where(['paymentId' => $paymentId])->one();
+        // The parent transaction's `reference` may hold either the original paymentId
+        // (if it's the processing transaction) or the Swish paymentReference (if it's
+        // the completed/success transaction — the normal case Commerce refunds against).
+        $payment = Payment::find()
+            ->where(['paymentId' => $paymentId])
+            ->orWhere(['paymentReference' => $paymentId])
+            ->one();
 
         if (!$payment) {
             return SwishRequestResponse::asFailure("Payment record not found: {$paymentId}");

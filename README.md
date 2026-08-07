@@ -324,6 +324,8 @@ The plugin adds a **Swish Suite** section to the Craft Control Panel with five m
 ### Welcome
 Quick-start guide and status overview for new installations.
 
+![Welcome screen](docs/screenshots/welcome.png)
+
 ### Diagnostics
 Configuration troubleshooting and health checks:
 - Verifies certificate paths are readable
@@ -338,6 +340,8 @@ Operational overview of payment activity:
 - Payment state distribution (created, paid, failed)
 - Quick filters by date range
 
+![Dashboard screen](docs/screenshots/dashboard.png)
+
 ### Payments
 Complete payment history and management:
 - Search and filter by payment ID, status, amount, or date
@@ -346,12 +350,16 @@ Complete payment history and management:
 - Payment details, response payload, and audit logs
 - Export functionality for reports
 
+![Payments screen](docs/screenshots/payments.png)
+
 ### Refunds
 Manage refunds for completed payments:
 - List all refunds with status tracking
 - Create new refunds (full or partial)
 - Refund validation and balance checks
 - Audit trail and response logs
+
+![Refunds screen](docs/screenshots/refunds.png)
 
 All screens feature **real-time status updates** and detailed logging for troubleshooting.
 
