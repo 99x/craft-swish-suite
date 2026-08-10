@@ -1,0 +1,25 @@
+name: craft-swish-suite
+type: php
+php_version: "8.3"
+composer_version: "2"
+
+# Unlike craft-vipps-suite (which omits the db container — it only runs static
+# analysis), this project's integration suite bootstraps a real Craft app and
+# needs a database. The web_environment values below are ddev's own MySQL
+# credentials, so `ddev composer integration` works with no further setup.
+database:
+  type: mysql
+  version: "8.0"
+
+web_environment:
+  - CRAFT_DB_DRIVER=mysql
+  - CRAFT_DB_SERVER=db
+  - CRAFT_DB_PORT=3306
+  - CRAFT_DB_DATABASE=db
+  - CRAFT_DB_USER=db
+  - CRAFT_DB_PASSWORD=db
+
+# ddev start              → start the containers
+# ddev composer install   → install dependencies (inside the container)
+# ddev composer check     → ECS + PHPStan + unit + integration
+# ddev composer fix-cs    → auto-fix code style

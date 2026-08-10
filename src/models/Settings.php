@@ -11,15 +11,15 @@ class Settings extends Model
     private const DEFAULT_CHECKOUT_TITLE = 'Pay with Swish';
     private const DEFAULT_REDIRECT_URL = '/';
 
-    public string $swishNumber   = '';
-    public string $certPath      = '';
-    public string $certPassword  = '';
-    public string $caPath        = '';
-    public bool   $testMode      = true;
-    public bool   $logsEnabled   = true;
+    public string $swishNumber = '';
+    public string $certPath = '';
+    public string $certPassword = '';
+    public string $caPath = '';
+    public bool   $testMode = true;
+    public bool   $logsEnabled = true;
     public string $checkoutTitle = self::DEFAULT_CHECKOUT_TITLE;
-    public string $successUrl    = self::DEFAULT_REDIRECT_URL;
-    public string $cancelUrl     = self::DEFAULT_REDIRECT_URL;
+    public string $successUrl = self::DEFAULT_REDIRECT_URL;
+    public string $cancelUrl = self::DEFAULT_REDIRECT_URL;
 
     /** @return array<int, array<int|string, mixed>> */
     public function rules(): array
@@ -56,8 +56,9 @@ class Settings extends Model
 
     public function beforeValidate(): bool
     {
-        $this->testMode = filter_var($this->testMode, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
-        $this->logsEnabled = filter_var($this->logsEnabled, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
+        // `testMode` and `logsEnabled` are declared as typed `bool` properties,
+        // so PHP has already coerced whatever arrived from config or env by the
+        // time this runs — re-filtering them here was a no-op.
         $this->swishNumber = trim($this->swishNumber);
         $this->certPath = trim($this->certPath);
         $this->certPassword = trim($this->certPassword);

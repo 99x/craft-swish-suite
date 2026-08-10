@@ -10,44 +10,70 @@ use craft\commerce\models\payments\BasePaymentForm;
 use craft\commerce\models\PaymentSource;
 use craft\commerce\models\Transaction;
 use craft\commerce\Plugin as Commerce;
-use craft\commerce\records\Transaction as TransactionRecord;
 use craft\elements\conditions\ElementConditionInterface;
 use craft\helpers\App;
 use craft\helpers\UrlHelper;
 use craft\web\Response as WebResponse;
-use yii\base\NotSupportedException;
 use NinetyNineX\SwishSuite\models\SwishPaymentForm;
 use NinetyNineX\SwishSuite\records\Payment;
 use NinetyNineX\SwishSuite\records\Refund;
 use NinetyNineX\SwishSuite\services\SwishPaymentService;
 use NinetyNineX\SwishSuite\SwishSuite;
+use yii\base\NotSupportedException;
 
 class SwishGateway extends Gateway
 {
     // ── Gateway Settings (per-instance overrides for global plugin settings) ─
 
-    public string $swishNumber  = '';
-    public string $certPath     = '';
+    public string $swishNumber = '';
+    public string $certPath = '';
     public string $certPassword = '';
-    public string $caPath       = '';
-    public ?bool  $testMode     = null; // null = inherit from plugin settings
+    public string $caPath = '';
+    public ?bool  $testMode = null; // null = inherit from plugin settings
     public string $checkoutTitle = '';
 
     // ── Capabilities ─────────────────────────────────────────────────────────
 
-    public function supportsPurchase(): bool          { return true; }
-    public function supportsRefund(): bool            { return true; }
-    public function supportsPartialRefund(): bool     { return true; }
-    public function supportsAuthorize(): bool         { return false; }
-    public function supportsCapture(): bool           { return false; }
-    public function supportsPaymentSources(): bool    { return false; }
-    public function supportsCompletePurchase(): bool  { return false; }
-    public function supportsCompleteAuthorize(): bool { return false; }
+    public function supportsPurchase(): bool
+    {
+        return true;
+    }
+    public function supportsRefund(): bool
+    {
+        return true;
+    }
+    public function supportsPartialRefund(): bool
+    {
+        return true;
+    }
+    public function supportsAuthorize(): bool
+    {
+        return false;
+    }
+    public function supportsCapture(): bool
+    {
+        return false;
+    }
+    public function supportsPaymentSources(): bool
+    {
+        return false;
+    }
+    public function supportsCompletePurchase(): bool
+    {
+        return false;
+    }
+    public function supportsCompleteAuthorize(): bool
+    {
+        return false;
+    }
 
     // Swish defines callback URLs programmatically per-payment — not via a fixed
     // dashboard endpoint. Declaring false prevents Commerce from showing a useless
     // webhook URL in gateway settings.
-    public function supportsWebhooks(): bool { return false; }
+    public function supportsWebhooks(): bool
+    {
+        return false;
+    }
 
     // Commerce 5 stores address conditions as null when unset. The base setter
     // does not accept null, so we guard here to prevent a fatal error on load.
@@ -84,7 +110,7 @@ class SwishGateway extends Gateway
     public function purchase(Transaction $transaction, BasePaymentForm $form): RequestResponseInterface
     {
         /** @var SwishPaymentForm $form */
-        $service        = SwishSuite::getInstance()->swishPayment;
+        $service = SwishSuite::getInstance()->swishPayment;
         $globalSettings = SwishSuite::getInstance()->getSettings();
 
         $amountMinorUnits = $service->normalizeAmountToMinorUnits((string)$transaction->paymentAmount);
@@ -93,14 +119,14 @@ class SwishGateway extends Gateway
         }
 
         $payerAlias = ($form->payerAlias !== null && $form->payerAlias !== '') ? $form->payerAlias : null;
-        $flow       = $payerAlias ? SwishPaymentService::FLOW_ECOMMERCE : SwishPaymentService::FLOW_MCOMMERCE;
+        $flow = $payerAlias ? SwishPaymentService::FLOW_ECOMMERCE : SwishPaymentService::FLOW_MCOMMERCE;
 
-        $paymentId          = $service->generatePaymentId();
+        $paymentId = $service->generatePaymentId();
         $callbackIdentifier = $service->generatePaymentId();
-        $callbackUrl        = UrlHelper::siteUrl(SwishSuite::getInstance()->getCallbackRoute());
+        $callbackUrl = UrlHelper::siteUrl(SwishSuite::getInstance()->getCallbackRoute());
 
-        $order        = $transaction->getOrder();
-        $orderRef     = $order?->reference ?? 'ORDER';
+        $order = $transaction->getOrder();
+        $orderRef = $order?->reference ?? 'ORDER';
         $safeReference = $service->generateSafeReference($orderRef);
 
         try {
@@ -134,20 +160,20 @@ class SwishGateway extends Gateway
             return SwishRequestResponse::asFailure('Failed to initiate Swish payment request.');
         }
 
-        $payment                          = new Payment();
-        $payment->paymentId               = $paymentId;
-        $payment->payeePaymentReference   = $safeReference;
-        $payment->callbackIdentifier      = $callbackIdentifier;
-        $payment->userId                  = $order?->getCustomer()?->id;
-        $payment->amount                  = $amountMinorUnits;
-        $payment->currency                = SwishPaymentService::CURRENCY_SEK;
-        $payment->status                  = Payment::STATUS_CREATED;
-        $payment->payerAlias              = $payerAlias;
-        $payment->payeeAlias              = $this->resolveSwishNumber();
-        $payment->message                 = $order?->reference ?? '';
-        $payment->callbackUrl             = $callbackUrl;
-        $payment->flow                    = $flow;
-        $payment->paymentRequestToken     = $result['paymentRequestToken'] ?? null;
+        $payment = new Payment();
+        $payment->paymentId = $paymentId;
+        $payment->payeePaymentReference = $safeReference;
+        $payment->callbackIdentifier = $callbackIdentifier;
+        $payment->userId = $order?->getCustomer()?->id;
+        $payment->amount = $amountMinorUnits;
+        $payment->currency = SwishPaymentService::CURRENCY_SEK;
+        $payment->status = Payment::STATUS_CREATED;
+        $payment->payerAlias = $payerAlias;
+        $payment->payeeAlias = $this->resolveSwishNumber();
+        $payment->message = $order?->reference ?? '';
+        $payment->callbackUrl = $callbackUrl;
+        $payment->flow = $flow;
+        $payment->paymentRequestToken = $result['paymentRequestToken'] ?? null;
         $payment->commerceTransactionHash = $transaction->hash; // ← the link between systems
 
         if (!$payment->save()) {
@@ -214,7 +240,7 @@ class SwishGateway extends Gateway
         // Retrieve the original paymentId stored as `reference` on the parent transaction
         $paymentId = null;
         if ($transaction->parentId) {
-            $parent    = Commerce::getInstance()->transactions->getTransactionById($transaction->parentId);
+            $parent = Commerce::getInstance()->transactions->getTransactionById($transaction->parentId);
             $paymentId = $parent?->reference;
         }
         if (!$paymentId) {
@@ -228,10 +254,7 @@ class SwishGateway extends Gateway
         // The parent transaction's `reference` may hold either the original paymentId
         // (if it's the processing transaction) or the Swish paymentReference (if it's
         // the completed/success transaction — the normal case Commerce refunds against).
-        $payment = Payment::find()
-            ->where(['paymentId' => $paymentId])
-            ->orWhere(['paymentReference' => $paymentId])
-            ->one();
+        $payment = Payment::findByPaymentIdOrReference($paymentId);
 
         if (!$payment) {
             return SwishRequestResponse::asFailure("Payment record not found: {$paymentId}");
@@ -249,7 +272,7 @@ class SwishGateway extends Gateway
             ->sum('amount') ?? 0);
 
         $refundAmountOre = (int)round($transaction->amount * 100);
-        $availableOre    = $payment->amount - $existingRefundsTotal;
+        $availableOre = $payment->amount - $existingRefundsTotal;
 
         if ($refundAmountOre > $availableOre) {
             return SwishRequestResponse::asFailure(
@@ -261,10 +284,10 @@ class SwishGateway extends Gateway
             );
         }
 
-        $service            = SwishSuite::getInstance()->swishPayment;
-        $refundId           = $service->generatePaymentId();
+        $service = SwishSuite::getInstance()->swishPayment;
+        $refundId = $service->generatePaymentId();
         $callbackIdentifier = $service->generatePaymentId();
-        $callbackUrl        = UrlHelper::siteUrl(SwishSuite::getInstance()->getCallbackRoute());
+        $callbackUrl = UrlHelper::siteUrl(SwishSuite::getInstance()->getCallbackRoute());
 
         $result = $service->createRefund(
             refundId:                  $refundId,
@@ -279,16 +302,16 @@ class SwishGateway extends Gateway
             return SwishRequestResponse::asFailure('Swish API rejected the refund request.');
         }
 
-        $refund                          = new Refund();
-        $refund->refundId                = $refundId;
-        $refund->paymentRecordId         = (int)$payment->id;
+        $refund = new Refund();
+        $refund->refundId = $refundId;
+        $refund->paymentRecordId = (int)$payment->id;
         $refund->originalPaymentReference = $payment->paymentReference;
-        $refund->callbackIdentifier      = $callbackIdentifier;
-        $refund->amount                  = $refundAmountOre;
-        $refund->currency                = SwishPaymentService::CURRENCY_SEK;
-        $refund->status                  = Refund::STATUS_CREATED;
-        $refund->callbackUrl             = $callbackUrl;
-        $refund->payeeAlias              = $payment->payeeAlias;
+        $refund->callbackIdentifier = $callbackIdentifier;
+        $refund->amount = $refundAmountOre;
+        $refund->currency = SwishPaymentService::CURRENCY_SEK;
+        $refund->status = Refund::STATUS_CREATED;
+        $refund->callbackUrl = $callbackUrl;
+        $refund->payeeAlias = $payment->payeeAlias;
         $refund->save();
 
         // Return success immediately — Commerce records the refund transaction.

@@ -15,9 +15,9 @@ use yii\web\Response;
 class PaymentsController extends Controller
 {
     private const PER_PAGE = 50;
-    private const TEMPLATE_INDEX      = SwishSuite::TEMPLATE_CP_PAYMENTS_INDEX;
-    private const TEMPLATE_VIEW       = SwishSuite::TEMPLATE_CP_PAYMENTS_VIEW;
-    private const TEMPLATE_CREATE     = SwishSuite::TEMPLATE_CP_PAYMENTS_CREATE;
+    private const TEMPLATE_INDEX = SwishSuite::TEMPLATE_CP_PAYMENTS_INDEX;
+    private const TEMPLATE_VIEW = SwishSuite::TEMPLATE_CP_PAYMENTS_VIEW;
+    private const TEMPLATE_CREATE = SwishSuite::TEMPLATE_CP_PAYMENTS_CREATE;
     private const ERROR_NOT_FOUND = 'Payment not found.';
     private const ERROR_INVALID_AMOUNT = 'Invalid payment amount.';
     private const ERROR_CREATE_API = 'Could not create payment via the Swish API.';
@@ -43,12 +43,12 @@ class PaymentsController extends Controller
         $request = Craft::$app->getRequest();
         $query = Payment::find()->orderBy(['dateCreated' => SORT_DESC]);
 
-        $status    = $request->getQueryParam('status');
-        $flow      = $request->getQueryParam('flow');
+        $status = $request->getQueryParam('status');
+        $flow = $request->getQueryParam('flow');
         $paymentId = $request->getQueryParam('paymentId');
         $reference = $request->getQueryParam('reference');
-        $dateFrom  = $request->getQueryParam('dateFrom');
-        $dateTo    = $request->getQueryParam('dateTo');
+        $dateFrom = $request->getQueryParam('dateFrom');
+        $dateTo = $request->getQueryParam('dateTo');
 
         if (is_string($status) && $status !== '') {
             $query->andWhere(['status' => $status]);
@@ -77,14 +77,14 @@ class PaymentsController extends Controller
         return $this->renderTemplate(self::TEMPLATE_INDEX, [
             'payments' => $payments,
             'filters' => [
-                'status'    => is_string($status) ? $status : '',
-                'flow'      => is_string($flow) ? $flow : '',
+                'status' => is_string($status) ? $status : '',
+                'flow' => is_string($flow) ? $flow : '',
                 'paymentId' => is_string($paymentId) ? $paymentId : '',
                 'reference' => is_string($reference) ? $reference : '',
-                'dateFrom'  => is_string($dateFrom) ? $dateFrom : '',
-                'dateTo'    => is_string($dateTo) ? $dateTo : '',
+                'dateFrom' => is_string($dateFrom) ? $dateFrom : '',
+                'dateTo' => is_string($dateTo) ? $dateTo : '',
             ],
-            'page'       => $page,
+            'page' => $page,
             'totalPages' => $totalPages,
             'totalCount' => $totalCount,
         ]);
@@ -94,7 +94,7 @@ class PaymentsController extends Controller
     {
         $this->requireCpRequest();
 
-        $payment = Payment::findOne($id);
+        $payment = Payment::findById((int)$id);
 
         if (!$payment) {
             throw new NotFoundHttpException(self::ERROR_NOT_FOUND);
@@ -108,12 +108,12 @@ class PaymentsController extends Controller
             && $payment->paymentRequestToken
         ) {
             $returnUrl = UrlHelper::siteUrl(SwishSuite::SITE_ROUTE_PAYMENT_SUCCESS, ['paymentId' => $payment->paymentId]);
-            $swishUrl  = SwishSuite::SWISH_APP_URL . '?token=' . $payment->paymentRequestToken . '&callbackurl=' . urlencode($returnUrl);
+            $swishUrl = SwishSuite::SWISH_APP_URL . '?token=' . $payment->paymentRequestToken . '&callbackurl=' . urlencode($returnUrl);
             $qrCodeDataUri = SwishSuite::getInstance()->swishPayment->generateQrCodeDataUri($swishUrl);
         }
 
         return $this->renderTemplate(self::TEMPLATE_VIEW, [
-            'payment'      => $payment,
+            'payment' => $payment,
             'qrCodeDataUri' => $qrCodeDataUri,
             'swishUrl' => $swishUrl,
         ]);
@@ -215,7 +215,7 @@ class PaymentsController extends Controller
     {
         $this->requireCpRequest();
 
-        $payment = Payment::findOne($id);
+        $payment = Payment::findById((int)$id);
         if (!$payment) {
             throw new NotFoundHttpException(self::ERROR_NOT_FOUND);
         }
@@ -224,15 +224,15 @@ class PaymentsController extends Controller
             return $this->redirect(SwishSuite::CP_ROUTE_PAYMENTS . '/' . $id);
         }
 
-        $returnUrl     = UrlHelper::cpUrl(SwishSuite::CP_ROUTE_PAYMENTS . '/' . $id);
-        $swishUrl      = SwishSuite::SWISH_APP_URL . '?token=' . $payment->paymentRequestToken
+        $returnUrl = UrlHelper::cpUrl(SwishSuite::CP_ROUTE_PAYMENTS . '/' . $id);
+        $swishUrl = SwishSuite::SWISH_APP_URL . '?token=' . $payment->paymentRequestToken
             . '&callbackurl=' . urlencode(UrlHelper::siteUrl(SwishSuite::SITE_ROUTE_PAYMENT_SUCCESS, ['paymentId' => $payment->paymentId]));
         $qrCodeDataUri = SwishSuite::getInstance()->swishPayment->generateQrCodeDataUri($swishUrl);
 
         return $this->renderTemplate(SwishSuite::TEMPLATE_CP_PAYMENTS_QR_WAITING, [
-            'payment'       => $payment,
+            'payment' => $payment,
             'qrCodeDataUri' => $qrCodeDataUri,
-            'redirectUrl'   => $returnUrl,
+            'redirectUrl' => $returnUrl,
         ]);
     }
 
@@ -241,7 +241,7 @@ class PaymentsController extends Controller
         $this->requireCpRequest();
         $this->requirePostRequest();
 
-        $payment = Payment::findOne($id);
+        $payment = Payment::findById((int)$id);
         if (!$payment) {
             throw new NotFoundHttpException(self::ERROR_NOT_FOUND);
         }

@@ -20,9 +20,9 @@ class SwishPaymentService extends Component
     public const FLOW_MCOMMERCE = 'mcommerce';
 
     public const EVENT_BEFORE_PAYMENT_CREATED = 'beforePaymentCreated';
-    public const EVENT_AFTER_PAYMENT_CREATED  = 'afterPaymentCreated';
-    public const EVENT_BEFORE_REFUND_CREATED  = 'beforeRefundCreated';
-    public const EVENT_AFTER_REFUND_CREATED   = 'afterRefundCreated';
+    public const EVENT_AFTER_PAYMENT_CREATED = 'afterPaymentCreated';
+    public const EVENT_BEFORE_REFUND_CREATED = 'beforeRefundCreated';
+    public const EVENT_AFTER_REFUND_CREATED = 'afterRefundCreated';
 
     private const API_VERSION_V1 = 'v1';
     private const API_VERSION_V2 = 'v2';
@@ -60,13 +60,13 @@ class SwishPaymentService extends Component
                 ? self::DEFAULT_BASE_URL_TEST_V2
                 : self::DEFAULT_BASE_URL_PROD_V2);
 
-        $this->baseUrlV2    = $this->normalizeBaseUrl($resolvedBaseUrlV2);
-        $this->baseUrlV1    = $this->buildVersionedBaseUrl($this->baseUrlV2, self::API_VERSION_V1);
-        $this->swishNumber  = (string)(App::parseEnv($settings->swishNumber) ?: $settings->swishNumber);
-        $this->certPath     = (string)(App::parseEnv($settings->certPath) ?: $settings->certPath);
+        $this->baseUrlV2 = $this->normalizeBaseUrl($resolvedBaseUrlV2);
+        $this->baseUrlV1 = $this->buildVersionedBaseUrl($this->baseUrlV2, self::API_VERSION_V1);
+        $this->swishNumber = (string)(App::parseEnv($settings->swishNumber) ?: $settings->swishNumber);
+        $this->certPath = (string)(App::parseEnv($settings->certPath) ?: $settings->certPath);
         $this->certPassword = (string)(App::parseEnv($settings->certPassword) ?: $settings->certPassword);
-        $this->caPath       = (string)(App::parseEnv($settings->caPath) ?: $settings->caPath);
-        $this->certIsP12    = $this->detectP12($this->certPath);
+        $this->caPath = (string)(App::parseEnv($settings->caPath) ?: $settings->caPath);
+        $this->certIsP12 = $this->detectP12($this->certPath);
 
         SwishSuite::getInstance()->helpers->logInfo(
             sprintf('[INIT] certFormat:%s baseUrlV2:%s', $this->certIsP12 ? 'p12' : 'pem', $this->baseUrlV2),
@@ -92,11 +92,11 @@ class SwishPaymentService extends Component
         }
 
         $baseOptions = [
-            'base_uri'        => $this->getBaseUrl($apiVersion),
-            'verify'          => $this->caPath,
+            'base_uri' => $this->getBaseUrl($apiVersion),
+            'verify' => $this->caPath,
             'connect_timeout' => 5,
-            'timeout'         => 15,
-            'headers'         => [self::CONTENT_TYPE_HEADER => self::CONTENT_TYPE_JSON],
+            'timeout' => 15,
+            'headers' => [self::CONTENT_TYPE_HEADER => self::CONTENT_TYPE_JSON],
         ];
 
         if ($this->certIsP12) {
@@ -106,15 +106,15 @@ class SwishPaymentService extends Component
             $stack = HandlerStack::create($curlHandler);
             $stack->push(function (callable $handler) {
                 return function (\Psr\Http\Message\RequestInterface $request, array $options) use ($handler) {
-                    $options['curl'][CURLOPT_SSLCERT]      = $options['cert'][0] ?? $this->certPath;
+                    $options['curl'][CURLOPT_SSLCERT] = $options['cert'][0] ?? $this->certPath;
                     $options['curl'][CURLOPT_SSLCERTPASSWD] = $options['cert'][1] ?? $this->certPassword;
-                    $options['curl'][CURLOPT_SSLCERTTYPE]  = 'P12';
+                    $options['curl'][CURLOPT_SSLCERTTYPE] = 'P12';
                     unset($options['cert']);
                     return $handler($request, $options);
                 };
             }, 'p12_cert_type');
             $baseOptions['handler'] = $stack;
-            $baseOptions['cert']    = [$this->certPath, $this->certPassword];
+            $baseOptions['cert'] = [$this->certPath, $this->certPassword];
         } else {
             $baseOptions['cert'] = [$this->certPath, $this->certPassword];
         }
@@ -175,14 +175,14 @@ class SwishPaymentService extends Component
     public function getResolvedConfiguration(): array
     {
         return [
-            'baseUrl'                => $this->baseUrlV2,
-            'baseUrlV1'              => $this->baseUrlV1,
-            'baseUrlV2'              => $this->baseUrlV2,
-            'merchantNumber'         => $this->swishNumber,
-            'certPath'               => $this->certPath,
-            'certFormat'             => $this->certIsP12 ? 'p12' : 'pem',
+            'baseUrl' => $this->baseUrlV2,
+            'baseUrlV1' => $this->baseUrlV1,
+            'baseUrlV2' => $this->baseUrlV2,
+            'merchantNumber' => $this->swishNumber,
+            'certPath' => $this->certPath,
+            'certFormat' => $this->certIsP12 ? 'p12' : 'pem',
             'certPasswordConfigured' => $this->certPassword !== '',
-            'caPath'                 => $this->caPath,
+            'caPath' => $this->caPath,
         ];
     }
 
@@ -193,7 +193,7 @@ class SwishPaymentService extends Component
     public function generateSafeReference(string $prefix = 'ORDER'): string
     {
         $safePrefix = strtoupper((string)preg_replace('/[^A-Z0-9]/i', '', $prefix)) ?: 'ORDER';
-        $suffix     = strtoupper(substr(str_replace('-', '', Uuid::uuid4()->toString()), 0, 20));
+        $suffix = strtoupper(substr(str_replace('-', '', Uuid::uuid4()->toString()), 0, 20));
 
         return substr($safePrefix . '-' . $suffix, 0, 35);
     }
@@ -205,7 +205,7 @@ class SwishPaymentService extends Component
         ?string $payerAlias = null,
         ?string $reference = null,
         ?string $message = null,
-        ?string $callbackIdentifier = null
+        ?string $callbackIdentifier = null,
     ): ?array {
         if (!str_starts_with($callbackUrl, self::HTTPS_PREFIX)) {
             throw new \RuntimeException(
@@ -214,17 +214,17 @@ class SwishPaymentService extends Component
         }
 
         $reference = $this->sanitizeReference($reference);
-        $message   = $message !== null ? mb_substr(trim($message), 0, 50) : null;
+        $message = $message !== null ? mb_substr(trim($message), 0, 50) : null;
 
         $payload = array_filter([
-            'payeeAlias'            => $this->swishNumber,
-            'amount'                => $this->formatAmountForApi($amountMinorUnits),
-            'currency'              => self::CURRENCY_SEK,
-            'callbackUrl'           => $callbackUrl,
-            'payerAlias'            => $payerAlias,
+            'payeeAlias' => $this->swishNumber,
+            'amount' => $this->formatAmountForApi($amountMinorUnits),
+            'currency' => self::CURRENCY_SEK,
+            'callbackUrl' => $callbackUrl,
+            'payerAlias' => $payerAlias,
             'payeePaymentReference' => $reference,
-            'message'               => $message !== '' ? $message : null,
-            'callbackIdentifier'    => $callbackIdentifier,
+            'message' => $message !== '' ? $message : null,
+            'callbackIdentifier' => $callbackIdentifier,
         ]);
 
         $response = $this->requestApi(
@@ -235,13 +235,9 @@ class SwishPaymentService extends Component
             self::API_VERSION_V2
         );
 
-        if ($response === null) {
-            return null;
-        }
-
         return [
-            'paymentId'           => $paymentId,
-            'location'            => is_string($response['headers']['Location'][0] ?? null) ? $response['headers']['Location'][0] : null,
+            'paymentId' => $paymentId,
+            'location' => is_string($response['headers']['Location'][0] ?? null) ? $response['headers']['Location'][0] : null,
             'paymentRequestToken' => is_string($response['headers']['PaymentRequestToken'][0] ?? null) ? $response['headers']['PaymentRequestToken'][0] : null,
         ];
     }
@@ -251,7 +247,7 @@ class SwishPaymentService extends Component
     {
         $response = $this->requestApi('GET', $this->getPaymentRequestsEndpoint($paymentId), [], [], self::API_VERSION_V1);
 
-        return $response !== null ? $response['body'] : null;
+        return $response['body'];
     }
 
     /** @return array<string, mixed>|null */
@@ -259,7 +255,7 @@ class SwishPaymentService extends Component
     {
         $response = $this->requestApi('GET', $this->getRefundsEndpoint($refundId), [], [], self::API_VERSION_V1);
 
-        return $response !== null ? $response['body'] : null;
+        return $response['body'];
     }
 
     public function cancelPayment(string $paymentId): bool
@@ -279,7 +275,7 @@ class SwishPaymentService extends Component
         int     $amountMinorUnits,
         string  $callbackUrl,
         ?string $message = null,
-        ?string $callbackIdentifier = null
+        ?string $callbackIdentifier = null,
     ): ?array {
         if (!str_starts_with($callbackUrl, self::HTTPS_PREFIX)) {
             throw new \RuntimeException(
@@ -290,13 +286,13 @@ class SwishPaymentService extends Component
         $message = $message !== null ? mb_substr(trim($message), 0, 50) : null;
 
         $payload = array_filter([
-            'payerAlias'               => $this->swishNumber,
+            'payerAlias' => $this->swishNumber,
             'originalPaymentReference' => $originalPaymentReference,
-            'amount'                   => $this->formatAmountForApi($amountMinorUnits),
-            'currency'                 => self::CURRENCY_SEK,
-            'callbackUrl'              => $callbackUrl,
-            'message'                  => $message !== '' ? $message : null,
-            'callbackIdentifier'       => $callbackIdentifier,
+            'amount' => $this->formatAmountForApi($amountMinorUnits),
+            'currency' => self::CURRENCY_SEK,
+            'callbackUrl' => $callbackUrl,
+            'message' => $message !== '' ? $message : null,
+            'callbackIdentifier' => $callbackIdentifier,
         ]);
 
         $response = $this->requestApi(
@@ -306,10 +302,6 @@ class SwishPaymentService extends Component
             [],
             self::API_VERSION_V2
         );
-
-        if ($response === null) {
-            return null;
-        }
 
         return [
             'refundId' => $refundId,
@@ -342,7 +334,7 @@ class SwishPaymentService extends Component
     {
         return match ($apiVersion) {
             self::API_VERSION_V1 => $this->baseUrlV1,
-            default              => $this->baseUrlV2,
+            default => $this->baseUrlV2,
         };
     }
 
@@ -362,15 +354,15 @@ class SwishPaymentService extends Component
      *
      * @param array<string, mixed>|array<int, array<string, string>> $body
      * @param array<string, string> $additionalHeaders
-     * @return array{statusCode: int, headers: array<string, array<int, string>>, body: array<string, mixed>}|null
+     * @return array{statusCode: int, headers: array<string, array<int, string>>, body: array<string, mixed>}
      */
     private function requestApi(
         string $method,
         string $endpoint,
         array $body = [],
         array $additionalHeaders = [],
-        string $apiVersion = self::API_VERSION_V2
-    ): ?array {
+        string $apiVersion = self::API_VERSION_V2,
+    ): array {
         $headers = array_merge([
             self::CONTENT_TYPE_HEADER => self::CONTENT_TYPE_JSON,
         ], $additionalHeaders);
@@ -385,10 +377,10 @@ class SwishPaymentService extends Component
 
         SwishSuite::getInstance()->helpers->logInfo(
             '[API REQUEST] ' . json_encode([
-                'method'      => strtoupper($method),
-                'endpoint'    => $endpoint,
-                'apiVersion'  => $apiVersion,
-                'baseUrl'     => $this->getBaseUrl($apiVersion),
+                'method' => strtoupper($method),
+                'endpoint' => $endpoint,
+                'apiVersion' => $apiVersion,
+                'baseUrl' => $this->getBaseUrl($apiVersion),
                 'bodyPreview' => $bodyPreview,
             ]),
             __METHOD__
@@ -400,14 +392,14 @@ class SwishPaymentService extends Component
                 $options['json'] = empty($body) ? new \stdClass() : $body;
             }
 
-            $response     = $this->getClient($apiVersion)->request($method, $endpoint, $options);
+            $response = $this->getClient($apiVersion)->request($method, $endpoint, $options);
             $responseBody = $response->getBody()->getContents();
-            $decoded      = json_decode($responseBody, true);
+            $decoded = json_decode($responseBody, true);
 
             return [
                 'statusCode' => $response->getStatusCode(),
-                'headers'    => $response->getHeaders(),
-                'body'       => is_array($decoded) ? $decoded : [],
+                'headers' => $response->getHeaders(),
+                'body' => is_array($decoded) ? $decoded : [],
             ];
         } catch (RequestException $e) {
             SwishSuite::getInstance()->helpers->logError(

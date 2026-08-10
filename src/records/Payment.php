@@ -30,15 +30,53 @@ use NinetyNineX\SwishSuite\enums\PaymentStatus;
  */
 class Payment extends ActiveRecord
 {
-    public const STATUS_CREATED   = PaymentStatus::Created->value;
-    public const STATUS_PAID      = PaymentStatus::Paid->value;
-    public const STATUS_DECLINED  = PaymentStatus::Declined->value;
+    public const STATUS_CREATED = PaymentStatus::Created->value;
+    public const STATUS_PAID = PaymentStatus::Paid->value;
+    public const STATUS_DECLINED = PaymentStatus::Declined->value;
     public const STATUS_CANCELLED = PaymentStatus::Cancelled->value;
-    public const STATUS_ERROR     = PaymentStatus::Error->value;
+    public const STATUS_ERROR = PaymentStatus::Error->value;
 
     public static function tableName(): string
     {
         return '{{%swish_suite_payments}}';
+    }
+
+    /**
+     * Typed lookup by Swish payment ID.
+     *
+     * Yii's `find()->one()` is declared as returning `array|ActiveRecord|null`,
+     * so callers cannot access typed properties on the result. Narrowing here
+     * keeps every call site honest instead of repeating the check.
+     */
+    public static function findByPaymentId(string $paymentId): ?self
+    {
+        $record = static::find()->where(['paymentId' => $paymentId])->one();
+
+        return $record instanceof self ? $record : null;
+    }
+
+    /**
+     * Typed lookup matching either the Swish payment ID or the payment reference.
+     *
+     * Commerce refunds against the completed transaction, whose reference is the
+     * Swish `paymentReference` rather than the original `paymentId`.
+     */
+    public static function findByPaymentIdOrReference(string $identifier): ?self
+    {
+        $record = static::find()
+            ->where(['paymentId' => $identifier])
+            ->orWhere(['paymentReference' => $identifier])
+            ->one();
+
+        return $record instanceof self ? $record : null;
+    }
+
+    /** Typed lookup by primary key. */
+    public static function findById(int $id): ?self
+    {
+        $record = static::find()->where(['id' => $id])->one();
+
+        return $record instanceof self ? $record : null;
     }
 
     /** @return array<int, array<int|string, mixed>> */

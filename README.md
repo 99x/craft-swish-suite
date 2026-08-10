@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Craft CMS](https://img.shields.io/badge/Craft%20CMS-5.0+-blueviolet.svg)](https://craftcms.com)
-[![PHP](https://img.shields.io/badge/PHP-8.1+-blue.svg)](https://www.php.net)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://www.php.net)
 
 Professional Craft CMS 5 plugin for seamless Swish payment integration. Supports both E-Commerce and M-Commerce flows with asynchronous callback processing, comprehensive logging, and a full-featured Control Panel.
 
@@ -12,13 +12,13 @@ Professional Craft CMS 5 plugin for seamless Swish payment integration. Supports
 
 - ✅ **Full Swish API Integration** — Payment requests, refunds, and status lookups
 - ✅ **Flexible Payment Flows** — E-Commerce (push notification) and M-Commerce (QR code)
-- ✅ **Craft Commerce Integration** — Works seamlessly as a payment gateway
+- ✅ **Works With or Without Commerce** — Standalone Swish payments, or an optional Craft Commerce gateway
 - ✅ **Asynchronous Processing** — Queue-based callback handling prevents timeouts
 - ✅ **Control Panel Dashboard** — Monitor payments, manage refunds, and diagnose issues
 - ✅ **Environment Configuration** — Secure certificate and credential management
 - ✅ **Structured Logging** — Async file logging with audit trails
 - ✅ **Partial Refunds** — Full and partial refund support with Swish API validation
-- ✅ **Security-First** — HMAC callback validation and HTTPS enforcement
+- ✅ **Validated Callbacks** — Per-payment callback identifiers and HTTPS enforcement
 
 ## Table of Contents
 
@@ -27,20 +27,28 @@ Professional Craft CMS 5 plugin for seamless Swish payment integration. Supports
 - [Configuration](#configuration)
 - [Environment Variables](#environment-variables)
 - [Payment Flow](#payment-flow)
+- [Routes](#routes)
 - [Craft Commerce Integration](#craft-commerce-integration)
 - [Control Panel](#control-panel)
-- [Refunds](#refunds)
 - [Callbacks and Security](#callbacks-and-security)
+- [Refunds](#refunds)
+- [Logging and Debugging](#logging-and-debugging)
 - [Troubleshooting](#troubleshooting)
+- [Architecture](#architecture)
 - [Development](#development)
+- [Security Considerations](#security-considerations)
 - [License](#license)
 
 ## Requirements
 
 ### Software
-- **PHP** 8.1+ (same as your Craft CMS 5 installation)
+- **PHP** 8.2+ (same as your Craft CMS 5 installation)
 - **Craft CMS** 5.0+
-- **Craft Commerce** 5.0+ (required for gateway integration)
+
+**Craft Commerce 5.0+ is optional.** Install it only if you want Swish available
+as a Commerce payment gateway. Without Commerce, the plugin runs as a standalone
+Swish payment solution — payments, refunds, callbacks, and the Control Panel all
+work on a regular Craft CMS site.
 
 ### Swish Credentials
 Before installing this plugin, you'll need:
@@ -241,13 +249,16 @@ Payment request created → QR code displayed → User scans with Swish app
 
 The plugin registers the following routes:
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/swish/checkout` | GET | Payment waiting screen |
-| `/swish/payments/process` | POST | Process payment (Commerce integration) |
-| `/swish/payments/success` | GET | Success redirect page |
-| `/swish/payments/cancel` | GET | Cancellation page |
-| `/swish/callback` | POST | Async payment status callback (configurable) |
+| Route | Purpose |
+|-------|---------|
+| `/swish/checkout` | Checkout screen |
+| `/swish/pay` | Payment entry point |
+| `/swish/payments/process` | Creates the Swish payment request |
+| `/swish/payments/waiting` | Waiting screen shown while the payer confirms in the Swish app |
+| `/swish/payments/poll` | Status polling endpoint used by the waiting screen |
+| `/swish/payments/success` | Success page |
+| `/swish/payments/cancel` | Cancellation page |
+| `/swish/callback` | Async payment/refund status callback (configurable) |
 
 **Note:** The callback route is configurable via `SWISH_CALLBACK_URI` environment variable.
 
@@ -367,17 +378,23 @@ All screens feature **real-time status updates** and detailed logging for troubl
 
 ### Callback Validation
 
-The callback endpoint (`/swish/callback`) implements multiple security layers:
+The callback endpoint (`/swish/callback`) applies the following:
 
-✅ **HMAC Validation** — Every callback signature is validated against stored `callbackIdentifier`
+✅ **Identifier Validation** — Each callback is matched against the `callbackIdentifier` UUID generated for that specific payment
 ✅ **HTTPS Only** — Enforced for production environments
 ✅ **CSRF Exemption** — Required for payment gateway callbacks
 ✅ **Anonymous Access** — Allows Swish infrastructure to post without authentication
 ✅ **Request Logging** — Full body and headers logged for audit trails
 
+> **Note on validation strength:** the plugin does **not** verify a cryptographic
+> signature (there is no HMAC). Callbacks are authenticated by the unguessable
+> per-payment `callbackIdentifier` UUID, which Swish echoes back. This is
+> shared-secret validation, not signature verification — treat the callback URL
+> and identifiers as secrets, and keep the endpoint on HTTPS.
+
 ### Callback Processing
 
-1. Incoming callback is validated with `callbackIdentifier` (HMAC-like comparison)
+1. Incoming callback is validated against the payment's `callbackIdentifier`
 2. Request body and headers are logged
 3. Processing is **queued asynchronously** to prevent timeouts
 4. Payment record is updated with Swish response
@@ -592,48 +609,57 @@ src/
 
 ### Setup
 
+All tooling runs inside [ddev](https://ddev.com), so nothing needs to be
+installed on your machine beyond ddev itself. Every contributor gets the same
+PHP version and the same database, matching CI.
+
 ```bash
-# Clone the repository
 git clone https://github.com/99x/craft-swish-suite.git
 cd craft-swish-suite
 
-# Install dependencies
-composer install
-
-# Run tests
-composer test
+ddev start              # PHP 8.3 + MySQL 8.0 containers
+ddev composer install
+ddev composer check     # everything: style, static analysis, tests
 ```
 
-### Running Tests
+### Running Checks
 
 ```bash
-# Run all tests (CS check + PHPStan)
-composer test
+# Everything, in order — fails fast on the first problem
+ddev composer check
 
-# Check code style (ECS)
-composer check-cs
-
-# Fix code style
-composer fix-cs
-
-# Run PHPStan analysis
-composer phpstan
-
-# Run PHPUnit tests
-composer unit
+# Individually, while working:
+ddev composer check-cs      # code style (ECS)
+ddev composer fix-cs        # auto-fix code style
+ddev composer phpstan       # static analysis (level 5)
+ddev composer unit          # unit tests — no database needed
+ddev composer integration   # integration tests — boots a real Craft app
 ```
+
+CI runs these same scripts as separate steps, so a green `ddev composer check`
+locally means a green pipeline.
+
+### Test Suites
+
+- **Unit** (`tests/unit`) — fast, no database, no Craft application. Covers
+  behavior that doesn't need `SwishSuite::getInstance()` to resolve.
+- **Integration** (`tests/integration`) — bootstraps a real Craft + Commerce
+  application against the ddev database and exercises the gateway end to end,
+  stubbing only the outbound Swish API call. The throwaway Craft install lives
+  in `tests/craft/` and is created automatically on first run.
 
 ### Code Quality Tools
 
-- **PHPStan** — Static analysis for type errors
-- **ECS** — Standardized code formatting
-- **PHPUnit** — Unit tests
+- **PHPStan** — static analysis at level 5, using the official `craftcms/phpstan`
+  extension so Craft's types resolve correctly. No baseline: the codebase is clean.
+- **ECS** — code formatting against Craft's own ruleset
+- **PHPUnit** — unit and integration tests
 
 ### Making a Pull Request
 
 1. Create a feature branch: `git checkout -b feature/my-feature`
 2. Make your changes
-3. Run tests locally: `composer test`
+3. Run `ddev composer check` and make sure it passes
 4. Commit with clear messages
 5. Push and open a pull request
 
@@ -655,11 +681,16 @@ The plugin **never stores**:
 - ❌ Certificate passwords in logs
 - ❌ Credit card information (Swish doesn't transmit this)
 
-The plugin **does store** (encrypted in database):
-- ✅ Payment amounts
-- ✅ Payer phone numbers (if provided)
-- ✅ Payment status and references
-- ✅ Full Swish API responses (for auditing)
+The plugin **does store**, in plain database columns (not encrypted):
+- Payment and refund amounts
+- Payer phone numbers, when provided
+- Payment status and Swish references
+- Full Swish API responses, as JSON, for auditing
+
+> ⚠️ Payer phone numbers are personal data. Because these columns are not
+> encrypted at the application level, protect them at the infrastructure level —
+> restrict database access, use encryption at rest, and include these tables in
+> your data-retention and GDPR processes.
 
 ## License
 

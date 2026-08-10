@@ -17,7 +17,7 @@ use yii\base\Event;
 class CallbackHandlerService extends Component
 {
     public const EVENT_AFTER_PAYMENT_CALLBACK = 'afterPaymentCallback';
-    public const EVENT_AFTER_REFUND_CALLBACK  = 'afterRefundCallback';
+    public const EVENT_AFTER_REFUND_CALLBACK = 'afterRefundCallback';
 
     /**
      * Validates callback identifier against persisted value
@@ -28,12 +28,12 @@ class CallbackHandlerService extends Component
             return false;
         }
 
-        $payment = Payment::find()->where(['paymentId' => $entityId])->one();
+        $payment = Payment::findByPaymentId($entityId);
         if ($payment && is_string($payment->callbackIdentifier)) {
             return hash_equals($payment->callbackIdentifier, $receivedIdentifier);
         }
 
-        $refund = Refund::find()->where(['refundId' => $entityId])->one();
+        $refund = Refund::findByRefundId($entityId);
         if ($refund && is_string($refund->callbackIdentifier)) {
             return hash_equals($refund->callbackIdentifier, $receivedIdentifier);
         }
@@ -51,7 +51,7 @@ class CallbackHandlerService extends Component
         }
 
         try {
-            $payment = Payment::find()->where(['paymentId' => $paymentId])->one();
+            $payment = Payment::findByPaymentId($paymentId);
             if (!$payment) {
                 SwishSuite::getInstance()->helpers->logWarning("Payment not found: {$paymentId}", __METHOD__);
                 return;
@@ -67,7 +67,6 @@ class CallbackHandlerService extends Component
             Event::trigger(self::class, self::EVENT_AFTER_PAYMENT_CALLBACK, new PaymentEvent([
                 'payment' => $payment,
             ]));
-
         } catch (\Throwable $e) {
             SwishSuite::getInstance()->helpers->logError(
                 "Payment callback failed: {$paymentId} - {$e->getMessage()}",
@@ -86,7 +85,7 @@ class CallbackHandlerService extends Component
         }
 
         try {
-            $refund = Refund::find()->where(['refundId' => $refundId])->one();
+            $refund = Refund::findByRefundId($refundId);
             if (!$refund) {
                 SwishSuite::getInstance()->helpers->logWarning("Refund not found: {$refundId}", __METHOD__);
                 return;
@@ -102,7 +101,6 @@ class CallbackHandlerService extends Component
             Event::trigger(self::class, self::EVENT_AFTER_REFUND_CALLBACK, new RefundEvent([
                 'refund' => $refund,
             ]));
-
         } catch (\Throwable $e) {
             SwishSuite::getInstance()->helpers->logError(
                 "Refund callback failed: {$refundId} - {$e->getMessage()}",
@@ -201,7 +199,6 @@ class CallbackHandlerService extends Component
             $transaction->response = json_encode($payment->getSwishResponseArray());
 
             Commerce::getInstance()->transactions->saveTransaction($transaction);
-
         } catch (\Throwable $e) {
             SwishSuite::getInstance()->helpers->logError(
                 "Failed to create Commerce transaction for payment {$payment->paymentId}: {$e->getMessage()}",
@@ -213,7 +210,7 @@ class CallbackHandlerService extends Component
     private function createRefundCommerceTransaction(Refund $refund): void
     {
         try {
-            $payment = Payment::find()->where(['id' => $refund->paymentRecordId])->one();
+            $payment = Payment::findById($refund->paymentRecordId);
 
             if (!$payment || $payment->commerceTransactionHash === null) {
                 return;
@@ -241,7 +238,6 @@ class CallbackHandlerService extends Component
             $transaction->response = json_encode($refund->getSwishResponseArray());
 
             Commerce::getInstance()->transactions->saveTransaction($transaction);
-
         } catch (\Throwable $e) {
             SwishSuite::getInstance()->helpers->logError(
                 "Failed to create refund transaction: {$e->getMessage()}",

@@ -12,6 +12,12 @@ use NinetyNineX\SwishSuite\gateways\SwishRequestResponse;
 use NinetyNineX\SwishSuite\models\SwishPaymentForm;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * purchase()'s success paths (which need a real Craft app for URL generation,
+ * sites, and ActiveRecord persistence) are covered separately in
+ * tests/integration/SwishGatewayIntegrationTest — this file only covers
+ * behavior that doesn't require SwishSuite::getInstance() to resolve.
+ */
 class SwishGatewayTest extends TestCase
 {
     private SwishGateway $gateway;
@@ -20,58 +26,6 @@ class SwishGatewayTest extends TestCase
     {
         parent::setUp();
         $this->gateway = new SwishGateway();
-    }
-
-    public function test_purchase_requires_valid_amount(): void
-    {
-        $form = new SwishPaymentForm();
-
-        $transaction = $this->createMockTransaction('invalid-amount');
-        $response = $this->gateway->purchase($transaction, $form);
-
-        self::assertFalse($response->isSuccessful());
-        self::assertFalse($response->isProcessing());
-        self::assertFalse($response->isRedirect());
-        self::assertStringContainsString('Invalid payment amount', $response->getMessage());
-    }
-
-    public function test_purchase_returns_redirect_response(): void
-    {
-        $form = new SwishPaymentForm();
-        $form->payerAlias = null;
-
-        $transaction = $this->createMockTransaction('100.00');
-        $response = $this->gateway->purchase($transaction, $form);
-
-        self::assertFalse($response->isSuccessful());
-        self::assertTrue($response->isProcessing());
-        self::assertTrue($response->isRedirect());
-        self::assertNotEmpty($response->getRedirectUrl());
-        self::assertStringContainsString('/swish/payments/waiting', $response->getRedirectUrl());
-    }
-
-    public function test_purchase_with_payer_alias_uses_ecommerce_flow(): void
-    {
-        $form = new SwishPaymentForm();
-        $form->payerAlias = '46701234567';
-
-        $transaction = $this->createMockTransaction('50.00');
-        $response = $this->gateway->purchase($transaction, $form);
-
-        self::assertTrue($response->isProcessing());
-        self::assertTrue($response->isRedirect());
-    }
-
-    public function test_purchase_without_payer_alias_uses_mcommerce_flow(): void
-    {
-        $form = new SwishPaymentForm();
-        $form->payerAlias = null;
-
-        $transaction = $this->createMockTransaction('75.00');
-        $response = $this->gateway->purchase($transaction, $form);
-
-        self::assertTrue($response->isProcessing());
-        self::assertTrue($response->isRedirect());
     }
 
     public function test_gateway_does_not_support_authorize(): void
@@ -145,7 +99,6 @@ class SwishGatewayTest extends TestCase
         $order->cancelUrl = '/shop/cart';
 
         $transaction->method('getOrder')->willReturn($order);
-        $transaction->method('getCustomer')->willReturn(null);
 
         return $transaction;
     }

@@ -20,6 +20,12 @@
 /coverage/
 /build/
 
+# Integration test suite — generated at test-run time (bootstraps a throwaway
+# Craft app against a real DB; nothing under here should ever be committed)
+/tests/craft/storage/
+/tests/craft/config/project/
+/tests/craft/config/license.key
+
 # PHPStan
 .phpstan-cache/
 

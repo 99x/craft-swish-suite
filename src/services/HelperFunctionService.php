@@ -36,10 +36,10 @@ class HelperFunctionService extends Component
             return;
         }
 
-        $level     = in_array(strtolower($level), ['info', 'warning', 'error', 'debug'], true)
+        $level = in_array(strtolower($level), ['info', 'warning', 'error', 'debug'], true)
             ? strtolower($level)
             : 'info';
-        $logEntry  = sprintf(
+        $logEntry = sprintf(
             "[%s] [%s] %s%s\n",
             date('Y-m-d H:i:s'),
             $level,
@@ -53,9 +53,9 @@ class HelperFunctionService extends Component
             // Mirror errors (and file-write failures) to Craft's native logger.
             $prefix = '[SwishSuite] ' . ($category !== null ? '[' . $category . '] ' : '');
             match ($level) {
-                'error'   => Craft::error($prefix . $message, __METHOD__),
+                'error' => Craft::error($prefix . $message, __METHOD__),
                 'warning' => Craft::warning($prefix . $message, __METHOD__),
-                default   => Craft::info($prefix . $message, __METHOD__),
+                default => Craft::info($prefix . $message, __METHOD__),
             };
         }
     }

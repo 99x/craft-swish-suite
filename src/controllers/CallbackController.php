@@ -21,8 +21,8 @@ class CallbackController extends Controller
 
     public function actionProcess(): Response
     {
-        $request         = Craft::$app->getRequest();
-        $helpers         = SwishSuite::getInstance()->helpers;
+        $request = Craft::$app->getRequest();
+        $helpers = SwishSuite::getInstance()->helpers;
         $callbackHandler = SwishSuite::getInstance()->callbackHandler;
 
         if (!$request->getIsPost()) {
@@ -52,16 +52,16 @@ class CallbackController extends Controller
         }
         $helpers->logInfo(
             '[CALLBACK REQUEST] ' . (string)json_encode([
-                'method'   => $request->getMethod(),
-                'url'      => $request->getFullUri(),
-                'headers'  => ['callbackidentifier' => $headers->get('callbackidentifier')],
+                'method' => $request->getMethod(),
+                'url' => $request->getFullUri(),
+                'headers' => ['callbackidentifier' => $headers->get('callbackidentifier')],
                 'bodySize' => strlen($rawBody),
-                'body'     => $safePayload,
+                'body' => $safePayload,
             ]),
             __METHOD__
         );
 
-        $payload  = $this->normalizePayload($payload);
+        $payload = $this->normalizePayload($payload);
         $entityId = is_string($payload['id'] ?? null) ? $payload['id'] : null;
         if ($entityId === null) {
             $helpers->logWarning('Callback payload missing id', __METHOD__);
@@ -80,7 +80,7 @@ class CallbackController extends Controller
             // The FOR UPDATE lock inside processPaymentCallback / processRefundCallback
             // ensures only one writer proceeds at a time.
             $result = Craft::$app->db->transaction(function () use ($entityId, $payload, $helpers, $callbackHandler): string {
-                $payment = Payment::find()->where(['paymentId' => $entityId])->one();
+                $payment = Payment::findByPaymentId($entityId);
                 if ($payment) {
                     if ($payment->isInTerminalState()) {
                         $helpers->logInfo(
@@ -93,7 +93,7 @@ class CallbackController extends Controller
                     return 'received';
                 }
 
-                $refund = Refund::find()->where(['refundId' => $entityId])->one();
+                $refund = Refund::findByRefundId($entityId);
                 if ($refund) {
                     if ($refund->isInTerminalState()) {
                         $helpers->logInfo(

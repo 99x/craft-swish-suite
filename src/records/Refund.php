@@ -26,14 +26,36 @@ use NinetyNineX\SwishSuite\enums\RefundStatus;
  */
 class Refund extends ActiveRecord
 {
-    public const STATUS_CREATED  = RefundStatus::Created->value;
-    public const STATUS_PAID     = RefundStatus::Paid->value;
+    public const STATUS_CREATED = RefundStatus::Created->value;
+    public const STATUS_PAID = RefundStatus::Paid->value;
     public const STATUS_DECLINED = RefundStatus::Declined->value;
-    public const STATUS_ERROR    = RefundStatus::Error->value;
+    public const STATUS_ERROR = RefundStatus::Error->value;
 
     public static function tableName(): string
     {
         return '{{%swish_suite_refunds}}';
+    }
+
+    /**
+     * Typed lookup by Swish refund ID.
+     *
+     * Yii's `find()->one()` is declared as returning `array|ActiveRecord|null`,
+     * so callers cannot access typed properties on the result. Narrowing here
+     * keeps every call site honest instead of repeating the check.
+     */
+    public static function findByRefundId(string $refundId): ?self
+    {
+        $record = static::find()->where(['refundId' => $refundId])->one();
+
+        return $record instanceof self ? $record : null;
+    }
+
+    /** Typed lookup by primary key. */
+    public static function findById(int $id): ?self
+    {
+        $record = static::find()->where(['id' => $id])->one();
+
+        return $record instanceof self ? $record : null;
     }
 
     /** @return array<int, array<int|string, mixed>> */
@@ -82,6 +104,6 @@ class Refund extends ActiveRecord
 
     public function getPayment(): ?Payment
     {
-        return Payment::findOne($this->paymentRecordId);
+        return Payment::findById($this->paymentRecordId);
     }
 }

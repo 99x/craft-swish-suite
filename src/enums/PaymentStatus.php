@@ -4,15 +4,15 @@ namespace NinetyNineX\SwishSuite\enums;
 
 enum PaymentStatus: string
 {
-    case Created   = 'CREATED';
-    case Paid      = 'PAID';
-    case Declined  = 'DECLINED';
+    case Created = 'CREATED';
+    case Paid = 'PAID';
+    case Declined = 'DECLINED';
     case Cancelled = 'CANCELLED';
-    case Error     = 'ERROR';
+    case Error = 'ERROR';
 
     public function isTerminal(): bool
     {
-        return match($this) {
+        return match ($this) {
             self::Paid, self::Declined, self::Cancelled, self::Error => true,
             self::Created => false,
         };

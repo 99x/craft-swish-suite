@@ -26,7 +26,7 @@ class ProcessCallbackJob extends BaseJob
         }
 
         try {
-            $payment = Payment::find()->where(['paymentId' => $entityId])->one();
+            $payment = Payment::findByPaymentId($entityId);
             if ($payment) {
                 // Skip if already in a terminal state to prevent double-processing
                 if (in_array($payment->status, [
@@ -45,7 +45,7 @@ class ProcessCallbackJob extends BaseJob
                 return;
             }
 
-            $refund = Refund::find()->where(['refundId' => $entityId])->one();
+            $refund = Refund::findByRefundId($entityId);
             if ($refund) {
                 // Skip if already in a terminal state
                 if (in_array($refund->status, [

@@ -41,7 +41,7 @@ class PaymentsController extends Controller
         $this->stdout(sprintf("Found %d stuck payment(s). Syncing...\n", count($payments)));
 
         $updated = 0;
-        $failed  = 0;
+        $failed = 0;
 
         foreach ($payments as $payment) {
             $apiStatus = SwishSuite::getInstance()->swishPayment->getPaymentStatus($payment->paymentId);

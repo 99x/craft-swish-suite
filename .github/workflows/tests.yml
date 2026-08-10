@@ -11,16 +11,66 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: swish_suite_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      CRAFT_DB_DRIVER: mysql
+      CRAFT_DB_SERVER: 127.0.0.1
+      CRAFT_DB_PORT: 3306
+      CRAFT_DB_DATABASE: swish_suite_test
+      CRAFT_DB_USER: root
+      CRAFT_DB_PASSWORD: ""
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.1
+          php-version: 8.3
+          # Craft 5 hard-requires intl; pdo_mysql is needed to reach the service
+          # container above. Neither is enabled by setup-php's default set.
+          extensions: intl, pdo_mysql, mbstring, gd, zip, bcmath, dom, curl, fileinfo, iconv
+          ini-values: memory_limit=512M
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php83-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-php83-composer-
 
       - name: Install dependencies
-        run: composer install --no-interaction --no-suggest --ignore-platform-reqs
+        run: composer install --no-interaction --no-progress
 
-      - name: Run tests
-        run: composer test
+      # Steps mirror the `composer check` aggregate that developers run via
+      # `ddev composer check` — same scripts, but split so every failure is
+      # visible in one run instead of aborting at the first one.
+      - name: Check code style
+        run: composer check-cs
+
+      - name: Run PHPStan
+        run: composer phpstan
+
+      - name: Run unit tests
+        run: composer unit
+
+      - name: Run integration tests
+        run: composer integration

@@ -11,21 +11,57 @@ class SwishRequestResponse implements RequestResponseInterface
         private readonly bool   $processing,
         private readonly bool   $redirect,
         private readonly string $redirectUrl = '',
-        private readonly string $reference   = '',
-        private readonly string $code        = '',
-        private readonly string $message     = '',
-        private readonly mixed  $data        = null,
-    ) {}
+        private readonly string $reference = '',
+        private readonly string $code = '',
+        private readonly string $message = '',
+        private readonly mixed  $data = null,
+    ) {
+    }
 
-    public function isSuccessful(): bool     { return $this->success; }
-    public function isProcessing(): bool     { return $this->processing; }
-    public function isRedirect(): bool       { return $this->redirect; }
-    public function getRedirectUrl(): string { return $this->redirectUrl; }
-    public function getTransactionReference(): string { return $this->reference; }
-    public function getCode(): string        { return $this->code; }
-    public function getMessage(): string     { return $this->message; }
-    public function getData(): mixed         { return $this->data; }
-    public function getRequest(): mixed      { return null; }
+    public function isSuccessful(): bool
+    {
+        return $this->success;
+    }
+    public function isProcessing(): bool
+    {
+        return $this->processing;
+    }
+    public function isRedirect(): bool
+    {
+        return $this->redirect;
+    }
+    public function getRedirectMethod(): string
+    {
+        return 'GET';
+    }
+    public function getRedirectData(): array
+    {
+        return [];
+    }
+    public function getRedirectUrl(): string
+    {
+        return $this->redirectUrl;
+    }
+    public function getTransactionReference(): string
+    {
+        return $this->reference;
+    }
+    public function getCode(): string
+    {
+        return $this->code;
+    }
+    public function getMessage(): string
+    {
+        return $this->message;
+    }
+    public function getData(): mixed
+    {
+        return $this->data;
+    }
+    public function getRequest(): mixed
+    {
+        return null;
+    }
 
     public function redirect(): void
     {
